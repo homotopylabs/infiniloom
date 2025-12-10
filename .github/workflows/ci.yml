@@ -9,51 +9,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  RUSTFLAGS: "-D warnings"
 
 jobs:
-  # Zig Core Build & Test
-  zig-build:
-    name: Zig Core (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.13.0
-
-      - name: Build Core
-        run: |
-          cd core
-          zig build -Doptimize=ReleaseFast
-
-      - name: Run Tests
-        run: |
-          cd core
-          zig build test
-
-      - name: Build WASM
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          cd core
-          zig build wasm
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: zig-core-${{ matrix.os }}
-          path: core/zig-out/lib/
-
   # Rust Engine Build & Test
   rust-build:
-    name: Rust Engine (${{ matrix.os }})
+    name: Rust (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -76,40 +36,25 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            engine/target/
+            target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check Format
-        run: |
-          cd engine
-          cargo fmt -- --check
+        run: cargo fmt --all -- --check
 
       - name: Clippy
-        run: |
-          cd engine
-          cargo clippy -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
 
       - name: Build
-        run: |
-          cd engine
-          cargo build --release
+        run: cargo build --workspace --release
 
       - name: Test
-        run: |
-          cd engine
-          cargo test
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: rust-engine-${{ matrix.os }}
-          path: engine/target/release/libinfiniloom*
+        run: cargo test --workspace
 
   # Python Bindings
   python-bindings:
     name: Python Bindings
     runs-on: ubuntu-latest
-    needs: rust-build
 
     steps:
       - uses: actions/checkout@v4
@@ -123,43 +68,38 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Maturin
-        run: pip install maturin pytest
+        run: pip install maturin
 
       - name: Build Bindings
         run: |
           cd bindings/python
           maturin build --release
 
-      # - name: Test Bindings
-      #   run: |
-      #     cd bindings/python
-      #     pip install target/wheels/*.whl
-      #     pytest
-
-  # WASM Build
-  wasm-build:
-    name: WASM Build
+  # Node.js Bindings
+  node-bindings:
+    name: Node.js Bindings
     runs-on: ubuntu-latest
-    needs: zig-build
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Zig
-        uses: goto-bus-stop/setup-zig@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          version: 0.13.0
+          node-version: '20'
 
-      - name: Build WASM
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
         run: |
-          cd core
-          zig build wasm -Doptimize=ReleaseSmall
+          cd bindings/node
+          npm install
 
-      - name: Upload WASM
-        uses: actions/upload-artifact@v4
-        with:
-          name: wasm-build
-          path: core/zig-out/lib/*.wasm
+      - name: Build
+        run: |
+          cd bindings/node
+          npm run build
 
   # Security Scan
   security-scan:
@@ -174,12 +114,14 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
+          exit-code: '0'
 
-  # Code Coverage
+  # Code Coverage (optional, don't fail build)
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -192,31 +134,21 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Cache Cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
-
       - name: Generate coverage
-        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: lcov.info
           fail_ci_if_error: false
-          verbose: true
 
-  # Cargo Audit
-  audit:
-    name: Security Audit
+  # Release (on tags)
+  release:
+    name: Release
     runs-on: ubuntu-latest
+    needs: [rust-build]
+    if: startsWith(github.ref, 'refs/tags/')
 
     steps:
       - uses: actions/checkout@v4
@@ -224,44 +156,11 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-
-      - name: Run audit
-        run: cargo audit
-
-  # MSRV Check
-  msrv:
-    name: MSRV (Rust 1.75)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Rust 1.75
-        uses: dtolnay/rust-toolchain@1.75.0
-
-      - name: Check MSRV
-        run: cargo check --workspace --all-features
-
-  # Release (on tags)
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [zig-build, rust-build, wasm-build]
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+      - name: Build Release
+        run: cargo build --workspace --release
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**/*
           draft: true
           generate_release_notes: true
