@@ -1,0 +1,58 @@
+{
+  "name": "@infiniloom/wasm",
+  "version": "0.1.0",
+  "description": "WebAssembly bindings for infiniloom - Repository context for LLMs",
+  "main": "pkg/infiniloom_wasm.js",
+  "types": "pkg/infiniloom_wasm.d.ts",
+  "files": [
+    "pkg/*",
+    "pkg-web/*",
+    "pkg-node/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "./build.sh",
+    "build:web": "wasm-pack build --target web --out-dir pkg-web",
+    "build:node": "wasm-pack build --target nodejs --out-dir pkg-node",
+    "build:bundler": "wasm-pack build --target bundler --out-dir pkg",
+    "build:all": "npm run build",
+    "test": "wasm-pack test --headless --firefox",
+    "clean": "rm -rf pkg pkg-web pkg-node target",
+    "demo": "cd demo && python3 -m http.server 8080"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/homotopylabs/infiniloom.git"
+  },
+  "keywords": [
+    "wasm",
+    "webassembly",
+    "llm",
+    "ai",
+    "context",
+    "repository",
+    "code",
+    "tokenizer",
+    "compression",
+    "claude",
+    "gpt",
+    "gemini"
+  ],
+  "author": "Homotopy Labs",
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/homotopylabs/infiniloom/issues"
+  },
+  "homepage": "https://github.com/homotopylabs/infiniloom#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

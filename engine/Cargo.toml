@@ -1,0 +1,119 @@
+[package]
+name = "infiniloom-engine"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91"
+description = "Repository context engine for infiniloom"
+license = "MIT"
+repository = "https://github.com/homotopylabs/infiniloom"
+build = "build.rs"
+
+[lib]
+name = "infiniloom_engine"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Async runtime
+tokio = { version = "1.35", features = ["full"], optional = true }
+async-trait = { version = "0.1", optional = true }
+
+# FFI
+libc = "0.2"
+
+# Graph algorithms (PageRank)
+petgraph = "0.6"
+
+# Parallel processing
+rayon = "1.8"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Regex for pattern matching
+regex = "1.10"
+
+# Glob pattern matching
+glob = "0.3"
+
+# Unicode handling
+unicode-segmentation = "1.10"
+
+# Tree-sitter for AST parsing (30+ languages)
+tree-sitter = "0.20"
+tree-sitter-python = "0.20"
+tree-sitter-javascript = "0.20"
+tree-sitter-typescript = "0.20"
+tree-sitter-rust = "0.20"
+tree-sitter-go = "0.20"
+tree-sitter-java = "0.20"
+tree-sitter-c = "0.20"
+tree-sitter-cpp = "0.20"
+tree-sitter-c-sharp = "0.20"
+tree-sitter-ruby = "0.20"
+tree-sitter-bash = "0.20"
+
+# Accurate token counting
+tiktoken-rs = "0.5"
+
+# Memory-mapped I/O
+memmap2 = "0.9"
+
+# File watching for incremental mode
+notify = { version = "6.1", optional = true }
+
+# Git operations
+gix = { version = "0.58", default-features = false, features = ["blocking-network-client", "worktree-mutation"], optional = true }
+
+# Configuration
+toml = "0.8"
+figment = { version = "0.10", features = ["yaml", "toml", "json", "env"] }
+
+# URL parsing for remote repos
+url = "2.5"
+
+# Binary serialization for cache
+bincode = "1.3"
+
+# Optional: Local embeddings
+# Note: candle 0.8+ is required for compatibility with rand 0.9
+[dependencies.candle-core]
+version = "0.8"
+optional = true
+
+[dependencies.candle-transformers]
+version = "0.8"
+optional = true
+
+[features]
+default = []
+async = ["tokio", "async-trait"]
+embeddings = ["candle-core", "candle-transformers"]
+zig-core = []
+watch = ["notify"]
+git = ["gix"]
+full = ["async", "embeddings", "watch", "git"]
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3.10"
+proptest = "1.4"
+walkdir = "2.4"
+ignore = "0.4"
+rayon = "1.8"
+
+[[bench]]
+name = "comparison"
+harness = false
+
+[lints]
+workspace = true

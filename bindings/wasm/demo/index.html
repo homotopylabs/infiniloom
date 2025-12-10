@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLoom WASM Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .panel h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        .stat-value.highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .output-panel {
+            grid-column: 1 / -1;
+        }
+
+        .output-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .model-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .badge-claude { background: #d4a373; color: white; }
+        .badge-gpt { background: #10a37f; color: white; }
+        .badge-gemini { background: #4285f4; color: white; }
+        .badge-llama { background: #7c3aed; color: white; }
+
+        .examples {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: white;
+            border: 2px solid #dee2e6;
+            color: #495057;
+        }
+
+        .example-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: white;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            border-top: 2px solid #e9ecef;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧬 CodeLoom WASM Demo</h1>
+            <p>Transform your code into LLM-friendly context</p>
+        </header>
+
+        <div class="content">
+            <!-- Input Panel -->
+            <div class="panel">
+                <h2>📝 Input Code</h2>
+                <div class="examples">
+                    <button class="example-btn" onclick="loadExample('rust')">Rust Example</button>
+                    <button class="example-btn" onclick="loadExample('python')">Python Example</button>
+                    <button class="example-btn" onclick="loadExample('javascript')">JS Example</button>
+                    <button class="example-btn" onclick="loadExample('typescript')">TS Example</button>
+                </div>
+                <textarea id="input" placeholder="Paste your code here...">fn main() {
+    println!("Hello, CodeLoom!");
+
+    let numbers = vec![1, 2, 3, 4, 5];
+    let sum: i32 = numbers.iter().sum();
+
+    println!("Sum: {}", sum);
+}</textarea>
+                <div class="controls">
+                    <div class="btn-group">
+                        <label for="filename">Filename:</label>
+                        <input type="text" id="filename" value="main.rs" style="padding: 8px; border: 2px solid #dee2e6; border-radius: 6px; width: 150px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Stats Panel -->
+            <div class="panel">
+                <h2>📊 Token Counts</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Claude</div>
+                        <div class="stat-value highlight" id="tokens-claude">-</div>
+                        <span class="model-badge badge-claude">Sonnet</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">GPT-4o</div>
+                        <div class="stat-value highlight" id="tokens-gpt4o">-</div>
+                        <span class="model-badge badge-gpt">OpenAI</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">GPT-4</div>
+                        <div class="stat-value highlight" id="tokens-gpt4">-</div>
+                        <span class="model-badge badge-gpt">OpenAI</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Gemini</div>
+                        <div class="stat-value highlight" id="tokens-gemini">-</div>
+                        <span class="model-badge badge-gemini">Google</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Llama</div>
+                        <div class="stat-value highlight" id="tokens-llama">-</div>
+                        <span class="model-badge badge-llama">Meta</span>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Bytes</div>
+                        <div class="stat-value" id="bytes">-</div>
+                    </div>
+                </div>
+                <button onclick="updateTokens()" style="margin-top: 15px; width: 100%;">🔄 Update Counts</button>
+            </div>
+
+            <!-- Context Generation Panel -->
+            <div class="panel output-panel">
+                <h2>⚙️ Generate Context</h2>
+                <div class="controls">
+                    <div class="btn-group">
+                        <label for="format">Output Format:</label>
+                        <select id="format">
+                            <option value="Claude">Claude (XML)</option>
+                            <option value="GPT">GPT (Markdown)</option>
+                            <option value="Gemini">Gemini (YAML)</option>
+                            <option value="Plain">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <label for="compression">Compression:</label>
+                        <select id="compression">
+                            <option value="None">None (0%)</option>
+                            <option value="Minimal">Minimal (10-20%)</option>
+                            <option value="Balanced" selected>Balanced (30-40%)</option>
+                            <option value="Aggressive">Aggressive (50-60%)</option>
+                        </select>
+                    </div>
+                    <button onclick="generateContext()">✨ Generate Context</button>
+                    <button onclick="copyOutput()" class="secondary">📋 Copy Output</button>
+                </div>
+                <div style="margin-top: 15px;">
+                    <div id="output" class="output-content">Click "Generate Context" to see the output...</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Made with ❤️ using <a href="https://github.com/codeloom/codeloom" target="_blank">CodeLoom</a> |
+            <a href="https://github.com/codeloom/codeloom/tree/main/bindings/wasm" target="_blank">View Source</a>
+        </footer>
+    </div>
+
+    <script type="module">
+        import init, {
+            count_tokens_all,
+            generate_context,
+            detect_language,
+            OutputFormat,
+            CompressionLevel
+        } from '../pkg-web/codeloom_wasm.js';
+
+        // Initialize WASM
+        let wasmReady = false;
+
+        async function initWasm() {
+            try {
+                await init();
+                wasmReady = true;
+                console.log('✅ CodeLoom WASM initialized');
+                updateTokens(); // Update counts for default example
+            } catch (error) {
+                console.error('❌ Failed to initialize WASM:', error);
+                alert('Failed to load WASM module. Please refresh the page.');
+            }
+        }
+
+        // Initialize on load
+        initWasm();
+
+        // Example code snippets
+        const examples = {
+            rust: `fn fibonacci(n: u32) -> u64 {
+    match n {
+        0 => 0,
+        1 => 1,
+        _ => fibonacci(n - 1) + fibonacci(n - 2),
+    }
+}
+
+fn main() {
+    println!("Fibonacci sequence:");
+    for i in 0..10 {
+        println!("F({}) = {}", i, fibonacci(i));
+    }
+}`,
+            python: `def fibonacci(n):
+    """Calculate the nth Fibonacci number."""
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+def main():
+    print("Fibonacci sequence:")
+    for i in range(10):
+        print(f"F({i}) = {fibonacci(i)}")
+
+if __name__ == "__main__":
+    main()`,
+            javascript: `// Calculate Fibonacci numbers
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+function main() {
+    console.log("Fibonacci sequence:");
+    for (let i = 0; i < 10; i++) {
+        console.log(\`F(\${i}) = \${fibonacci(i)}\`);
+    }
+}
+
+main();`,
+            typescript: `// Calculate Fibonacci numbers with types
+function fibonacci(n: number): number {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+function main(): void {
+    console.log("Fibonacci sequence:");
+    for (let i = 0; i < 10; i++) {
+        console.log(\`F(\${i}) = \${fibonacci(i)}\`);
+    }
+}
+
+main();`
+        };
+
+        // Load example
+        window.loadExample = (lang) => {
+            const input = document.getElementById('input');
+            const filename = document.getElementById('filename');
+
+            input.value = examples[lang];
+
+            const extensions = {
+                rust: 'main.rs',
+                python: 'main.py',
+                javascript: 'index.js',
+                typescript: 'index.ts'
+            };
+
+            filename.value = extensions[lang];
+            updateTokens();
+        };
+
+        // Update token counts
+        window.updateTokens = () => {
+            if (!wasmReady) {
+                console.warn('WASM not ready yet');
+                return;
+            }
+
+            const input = document.getElementById('input').value;
+
+            try {
+                const tokens = count_tokens_all(input);
+
+                document.getElementById('tokens-claude').textContent = tokens.claude.toLocaleString();
+                document.getElementById('tokens-gpt4o').textContent = tokens.gpt4o.toLocaleString();
+                document.getElementById('tokens-gpt4').textContent = tokens.gpt4.toLocaleString();
+                document.getElementById('tokens-gemini').textContent = tokens.gemini.toLocaleString();
+                document.getElementById('tokens-llama').textContent = tokens.llama.toLocaleString();
+                document.getElementById('bytes').textContent = input.length.toLocaleString();
+            } catch (error) {
+                console.error('Error counting tokens:', error);
+            }
+        };
+
+        // Generate context
+        window.generateContext = () => {
+            if (!wasmReady) {
+                alert('WASM module is still loading. Please wait...');
+                return;
+            }
+
+            const input = document.getElementById('input').value;
+            const filename = document.getElementById('filename').value;
+            const format = document.getElementById('format').value;
+            const compression = document.getElementById('compression').value;
+            const output = document.getElementById('output');
+
+            if (!input.trim()) {
+                alert('Please enter some code first!');
+                return;
+            }
+
+            try {
+                // Create file array
+                const files = [[filename, input]];
+
+                // Map format and compression to enums
+                const formatEnum = OutputFormat[format];
+                const compressionEnum = CompressionLevel[compression];
+
+                // Generate context
+                const context = generate_context(files, formatEnum, compressionEnum);
+
+                output.textContent = context;
+            } catch (error) {
+                console.error('Error generating context:', error);
+                output.textContent = `Error: ${error.message}`;
+            }
+        };
+
+        // Copy output to clipboard
+        window.copyOutput = () => {
+            const output = document.getElementById('output').textContent;
+
+            if (!output || output.includes('Click "Generate Context"')) {
+                alert('Generate context first!');
+                return;
+            }
+
+            navigator.clipboard.writeText(output).then(() => {
+                alert('✅ Copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('❌ Failed to copy to clipboard');
+            });
+        };
+
+        // Auto-update tokens on input
+        document.getElementById('input').addEventListener('input', () => {
+            // Debounce
+            clearTimeout(window.tokenUpdateTimer);
+            window.tokenUpdateTimer = setTimeout(updateTokens, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Build outputs
+pkg/
+pkg-web/
+pkg-node/
+target/
+*.wasm
+*.js.map
+
+# npm
+node_modules/
+*.tgz
+
+# Rust
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+test-output/

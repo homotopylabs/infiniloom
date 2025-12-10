@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLoom WASM - Simple Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .test {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test.error { border-left-color: #f44336; }
+        .status { font-weight: bold; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        pre {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CodeLoom WASM - Simple Test</h1>
+    <div id="results">Loading...</div>
+
+    <script type="module">
+        import init, {
+            version,
+            count_tokens,
+            count_tokens_all,
+            detect_language,
+            compress,
+            CompressionLevel
+        } from '../pkg-web/codeloom_wasm.js';
+
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Initializing WASM...</p>';
+
+            try {
+                // Initialize
+                await init();
+
+                let results = '<h2>Test Results</h2>';
+                let passCount = 0;
+                let totalCount = 0;
+
+                // Test 1: Version
+                totalCount++;
+                try {
+                    const ver = version();
+                    if (ver && ver.length > 0) {
+                        results += makeTest(`Version: ${ver}`, true);
+                        passCount++;
+                    } else {
+                        results += makeTest('Version test failed', false);
+                    }
+                } catch (e) {
+                    results += makeTest(`Version error: ${e}`, false);
+                }
+
+                // Test 2: Token Counting (specific model)
+                totalCount++;
+                try {
+                    const text = "fn main() { println!(\"Hello!\"); }";
+                    const claudeCount = count_tokens(text, "claude");
+                    if (claudeCount > 0 && claudeCount < 100) {
+                        results += makeTest(`Token counting (Claude): ${claudeCount} tokens`, true);
+                        passCount++;
+                    } else {
+                        results += makeTest('Token counting failed', false);
+                    }
+                } catch (e) {
+                    results += makeTest(`Token counting error: ${e}`, false);
+                }
+
+                // Test 3: Token Counting (all models)
+                totalCount++;
+                try {
+                    const text = "console.log('test');";
+                    const tokens = count_tokens_all(text);
+                    if (tokens.claude > 0 && tokens.gpt4o > 0) {
+                        results += makeTest(
+                            `Token counting (all models):<pre>${JSON.stringify({
+                                claude: tokens.claude,
+                                gpt4o: tokens.gpt4o,
+                                gpt4: tokens.gpt4,
+                                gemini: tokens.gemini,
+                                llama: tokens.llama
+                            }, null, 2)}</pre>`,
+                            true
+                        );
+                        passCount++;
+                    } else {
+                        results += makeTest('Multi-model token counting failed', false);
+                    }
+                } catch (e) {
+                    results += makeTest(`Multi-model error: ${e}`, false);
+                }
+
+                // Test 4: Language Detection
+                totalCount++;
+                try {
+                    const lang1 = detect_language("test.rs");
+                    const lang2 = detect_language("app.py");
+                    const lang3 = detect_language("index.js");
+
+                    if (lang1 === "rust" && lang2 === "python" && lang3 === "javascript") {
+                        results += makeTest(
+                            `Language detection: rust, python, javascript`,
+                            true
+                        );
+                        passCount++;
+                    } else {
+                        results += makeTest(
+                            `Language detection failed: ${lang1}, ${lang2}, ${lang3}`,
+                            false
+                        );
+                    }
+                } catch (e) {
+                    results += makeTest(`Language detection error: ${e}`, false);
+                }
+
+                // Test 5: Compression
+                totalCount++;
+                try {
+                    const code = "// Comment\nfn main() {\n    // Another comment\n    println!(\"test\");\n}";
+                    const compressed = compress(code, CompressionLevel.Balanced, "rust");
+
+                    if (compressed.length < code.length && !compressed.includes("// Comment")) {
+                        results += makeTest(
+                            `Compression: ${code.length} → ${compressed.length} bytes`,
+                            true
+                        );
+                        passCount++;
+                    } else {
+                        results += makeTest('Compression failed', false);
+                    }
+                } catch (e) {
+                    results += makeTest(`Compression error: ${e}`, false);
+                }
+
+                // Summary
+                results += `<hr><h2>Summary</h2>`;
+                results += `<p>Passed: <span class="success">${passCount}/${totalCount}</span></p>`;
+
+                if (passCount === totalCount) {
+                    results += '<p class="success">✓ All tests passed! WASM module is working correctly.</p>';
+                } else {
+                    results += '<p class="error">✗ Some tests failed. Check the console for details.</p>';
+                }
+
+                resultsDiv.innerHTML = results;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test error">
+                        <p class="status error">✗ FATAL ERROR</p>
+                        <p>Failed to initialize WASM module:</p>
+                        <pre>${error.toString()}</pre>
+                        <p><strong>Troubleshooting:</strong></p>
+                        <ol>
+                            <li>Make sure you built the WASM module: <code>cd .. && ./build.sh</code></li>
+                            <li>Serve this page via HTTP server (not file://)</li>
+                            <li>Check browser console for detailed errors</li>
+                        </ol>
+                    </div>
+                `;
+                console.error('WASM initialization error:', error);
+            }
+        }
+
+        function makeTest(message, success) {
+            const status = success ? '✓' : '✗';
+            const statusClass = success ? 'success' : 'error';
+            const testClass = success ? 'test' : 'test error';
+
+            return `
+                <div class="${testClass}">
+                    <p class="status ${statusClass}">${status} ${message}</p>
+                </div>
+            `;
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
