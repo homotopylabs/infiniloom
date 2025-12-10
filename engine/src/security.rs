@@ -158,10 +158,7 @@ impl SecurityScanner {
             },
         ];
 
-        Self {
-            patterns,
-            allowlist: HashSet::new(),
-        }
+        Self { patterns, allowlist: HashSet::new() }
     }
 
     /// Add a pattern to allowlist

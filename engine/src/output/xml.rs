@@ -26,12 +26,7 @@ pub struct XmlFormatter {
 impl XmlFormatter {
     /// Create a new XML formatter
     pub fn new(cache_optimized: bool) -> Self {
-        Self {
-            include_line_numbers: true,
-            cache_optimized,
-            use_cdata: true,
-            show_file_index: true,
-        }
+        Self { include_line_numbers: true, cache_optimized, use_cdata: true, show_file_index: true }
     }
 
     /// Set line numbers option
@@ -57,9 +52,18 @@ impl XmlFormatter {
         writeln!(output, "    <purpose>This is a comprehensive code context for the {} repository, optimized for AI-assisted code understanding and generation.</purpose>", escape_xml(&repo.name)).unwrap();
         writeln!(output, "    <how_to_use>").unwrap();
         writeln!(output, "      <tip>Start with the <overview> section to understand the project's purpose and structure</tip>").unwrap();
-        writeln!(output, "      <tip>Check <entry_points> to find main application files</tip>").unwrap();
-        writeln!(output, "      <tip>Use <repository_map> to understand relationships between modules</tip>").unwrap();
-        writeln!(output, "      <tip>Files are ordered by importance - most critical files come first</tip>").unwrap();
+        writeln!(output, "      <tip>Check <entry_points> to find main application files</tip>")
+            .unwrap();
+        writeln!(
+            output,
+            "      <tip>Use <repository_map> to understand relationships between modules</tip>"
+        )
+        .unwrap();
+        writeln!(
+            output,
+            "      <tip>Files are ordered by importance - most critical files come first</tip>"
+        )
+        .unwrap();
         writeln!(output, "    </how_to_use>").unwrap();
         writeln!(output, "  </llm_context_guide>").unwrap();
     }
@@ -73,7 +77,12 @@ impl XmlFormatter {
 
         // Primary language (find language with highest file count)
         if let Some(lang) = repo.metadata.languages.iter().max_by_key(|l| l.files) {
-            writeln!(output, "    <primary_language>{}</primary_language>", escape_xml(&lang.language)).unwrap();
+            writeln!(
+                output,
+                "    <primary_language>{}</primary_language>",
+                escape_xml(&lang.language)
+            )
+            .unwrap();
         }
 
         // Framework detection
@@ -91,8 +100,14 @@ impl XmlFormatter {
                     continue;
                 }
                 let entry_type = self.get_entry_type(&file.relative_path);
-                writeln!(output, "      <entry path=\"{}\" type=\"{}\" tokens=\"{}\"/>",
-                    escape_xml(&file.relative_path), entry_type, file.token_count.claude).unwrap();
+                writeln!(
+                    output,
+                    "      <entry path=\"{}\" type=\"{}\" tokens=\"{}\"/>",
+                    escape_xml(&file.relative_path),
+                    entry_type,
+                    file.token_count.claude
+                )
+                .unwrap();
                 entry_count += 1;
                 // Limit to 10 most important entry points
                 if entry_count >= 10 {
@@ -106,8 +121,13 @@ impl XmlFormatter {
         writeln!(output, "    <config_files>").unwrap();
         for file in &repo.files {
             if self.is_config_file(&file.relative_path) {
-                writeln!(output, "      <config path=\"{}\" tokens=\"{}\"/>",
-                    escape_xml(&file.relative_path), file.token_count.claude).unwrap();
+                writeln!(
+                    output,
+                    "      <config path=\"{}\" tokens=\"{}\"/>",
+                    escape_xml(&file.relative_path),
+                    file.token_count.claude
+                )
+                .unwrap();
             }
         }
         writeln!(output, "    </config_files>").unwrap();
@@ -119,17 +139,28 @@ impl XmlFormatter {
         // Check for common project indicators
         let has_cargo = repo.files.iter().any(|f| f.relative_path == "Cargo.toml");
         let has_package_json = repo.files.iter().any(|f| f.relative_path == "package.json");
-        let has_pyproject = repo.files.iter().any(|f| f.relative_path == "pyproject.toml" || f.relative_path == "setup.py");
+        let has_pyproject = repo
+            .files
+            .iter()
+            .any(|f| f.relative_path == "pyproject.toml" || f.relative_path == "setup.py");
         let has_go_mod = repo.files.iter().any(|f| f.relative_path == "go.mod");
 
         // Check for web framework indicators
-        let has_routes = repo.files.iter().any(|f|
-            f.relative_path.contains("routes") || f.relative_path.contains("api/"));
-        let has_components = repo.files.iter().any(|f|
-            f.relative_path.contains("components/") || f.relative_path.contains("views/"));
+        let has_routes = repo
+            .files
+            .iter()
+            .any(|f| f.relative_path.contains("routes") || f.relative_path.contains("api/"));
+        let has_components = repo
+            .files
+            .iter()
+            .any(|f| f.relative_path.contains("components/") || f.relative_path.contains("views/"));
 
         if has_cargo {
-            if repo.files.iter().any(|f| f.relative_path.ends_with("lib.rs")) {
+            if repo
+                .files
+                .iter()
+                .any(|f| f.relative_path.ends_with("lib.rs"))
+            {
                 "Rust Library"
             } else {
                 "Rust Application"
@@ -152,38 +183,87 @@ impl XmlFormatter {
             "Go Application"
         } else {
             "Software Project"
-        }.to_owned()
+        }
+        .to_owned()
     }
 
     fn is_entry_point(&self, path: &str) -> bool {
         let entry_patterns = [
-            "main.rs", "main.go", "main.py", "main.ts", "main.js", "main.c", "main.cpp",
-            "index.ts", "index.js", "index.tsx", "index.jsx", "index.py",
-            "app.py", "app.ts", "app.js", "app.tsx", "app.jsx", "app.go",
-            "server.py", "server.ts", "server.js", "server.go",
-            "mod.rs", "lib.rs", "__main__.py", "__init__.py",
+            "main.rs",
+            "main.go",
+            "main.py",
+            "main.ts",
+            "main.js",
+            "main.c",
+            "main.cpp",
+            "index.ts",
+            "index.js",
+            "index.tsx",
+            "index.jsx",
+            "index.py",
+            "app.py",
+            "app.ts",
+            "app.js",
+            "app.tsx",
+            "app.jsx",
+            "app.go",
+            "server.py",
+            "server.ts",
+            "server.js",
+            "server.go",
+            "mod.rs",
+            "lib.rs",
+            "__main__.py",
+            "__init__.py",
             "cmd/main.go",
         ];
-        entry_patterns.iter().any(|p| path.ends_with(p) || path.contains(&format!("/{}", p)))
+        entry_patterns
+            .iter()
+            .any(|p| path.ends_with(p) || path.contains(&format!("/{}", p)))
     }
 
     fn get_entry_type(&self, path: &str) -> &'static str {
-        if path.contains("main") { "main" }
-        else if path.contains("index") { "index" }
-        else if path.contains("app") { "app" }
-        else if path.contains("server") { "server" }
-        else if path.contains("lib") { "library" }
-        else if path.contains("mod.rs") { "module" }
-        else { "entry" }
+        if path.contains("main") {
+            "main"
+        } else if path.contains("index") {
+            "index"
+        } else if path.contains("app") {
+            "app"
+        } else if path.contains("server") {
+            "server"
+        } else if path.contains("lib") {
+            "library"
+        } else if path.contains("mod.rs") {
+            "module"
+        } else {
+            "entry"
+        }
     }
 
     fn is_config_file(&self, path: &str) -> bool {
         let config_files = [
-            "Cargo.toml", "package.json", "pyproject.toml", "go.mod", "pom.xml",
-            "build.gradle", "Gemfile", "requirements.txt", "setup.py", "setup.cfg",
-            "tsconfig.json", "webpack.config", "vite.config", "next.config",
-            "Makefile", "CMakeLists.txt", "Dockerfile", "docker-compose",
-            ".env.example", "config.yaml", "config.yml", "config.json",
+            "Cargo.toml",
+            "package.json",
+            "pyproject.toml",
+            "go.mod",
+            "pom.xml",
+            "build.gradle",
+            "Gemfile",
+            "requirements.txt",
+            "setup.py",
+            "setup.cfg",
+            "tsconfig.json",
+            "webpack.config",
+            "vite.config",
+            "next.config",
+            "Makefile",
+            "CMakeLists.txt",
+            "Dockerfile",
+            "docker-compose",
+            ".env.example",
+            "config.yaml",
+            "config.yml",
+            "config.json",
         ];
         // Only match root-level or well-known config paths
         let filename = path.rsplit('/').next().unwrap_or(path);
@@ -232,7 +312,12 @@ impl XmlFormatter {
 
         // External dependencies
         if !repo.metadata.external_dependencies.is_empty() {
-            writeln!(output, "    <dependencies count=\"{}\">", repo.metadata.external_dependencies.len()).unwrap();
+            writeln!(
+                output,
+                "    <dependencies count=\"{}\">",
+                repo.metadata.external_dependencies.len()
+            )
+            .unwrap();
             for dep in &repo.metadata.external_dependencies {
                 writeln!(output, "      <dependency name=\"{}\"/>", escape_xml(dep)).unwrap();
             }
@@ -248,7 +333,8 @@ impl XmlFormatter {
 
             // Write recent commits
             if !git_history.commits.is_empty() {
-                writeln!(output, "    <recent_commits count=\"{}\">", git_history.commits.len()).unwrap();
+                writeln!(output, "    <recent_commits count=\"{}\">", git_history.commits.len())
+                    .unwrap();
                 for commit in &git_history.commits {
                     writeln!(
                         output,
@@ -256,8 +342,10 @@ impl XmlFormatter {
                         escape_xml(&commit.short_hash),
                         escape_xml(&commit.author),
                         escape_xml(&commit.date)
-                    ).unwrap();
-                    writeln!(output, "        <message><![CDATA[{}]]></message>", commit.message).unwrap();
+                    )
+                    .unwrap();
+                    writeln!(output, "        <message><![CDATA[{}]]></message>", commit.message)
+                        .unwrap();
                     writeln!(output, "      </commit>").unwrap();
                 }
                 writeln!(output, "    </recent_commits>").unwrap();
@@ -265,14 +353,20 @@ impl XmlFormatter {
 
             // Write uncommitted changes
             if !git_history.changed_files.is_empty() {
-                writeln!(output, "    <uncommitted_changes count=\"{}\">", git_history.changed_files.len()).unwrap();
+                writeln!(
+                    output,
+                    "    <uncommitted_changes count=\"{}\">",
+                    git_history.changed_files.len()
+                )
+                .unwrap();
                 for file in &git_history.changed_files {
                     writeln!(
                         output,
                         "      <change path=\"{}\" status=\"{}\"/>",
                         escape_xml(&file.path),
                         escape_xml(&file.status)
-                    ).unwrap();
+                    )
+                    .unwrap();
                 }
                 writeln!(output, "    </uncommitted_changes>").unwrap();
             }
@@ -282,12 +376,7 @@ impl XmlFormatter {
     }
 
     fn write_repomap(&self, output: &mut String, map: &RepoMap) {
-        writeln!(
-            output,
-            "  <repository_map token_budget=\"{}\">",
-            map.token_count
-        )
-        .unwrap();
+        writeln!(output, "  <repository_map token_budget=\"{}\">", map.token_count).unwrap();
 
         // Summary with CDATA
         writeln!(output, "    <summary><![CDATA[{}]]></summary>", map.summary).unwrap();
@@ -334,12 +423,7 @@ impl XmlFormatter {
     }
 
     fn write_file_index(&self, output: &mut String, repo: &Repository) {
-        writeln!(
-            output,
-            "  <file_index entries=\"{}\">",
-            repo.files.len()
-        )
-        .unwrap();
+        writeln!(output, "  <file_index entries=\"{}\">", repo.files.len()).unwrap();
 
         for file in &repo.files {
             let importance = if file.importance > 0.8 {
@@ -388,12 +472,7 @@ impl XmlFormatter {
                 } else if self.use_cdata {
                     writeln!(output, "      <content><![CDATA[{}]]></content>", content).unwrap();
                 } else {
-                    writeln!(
-                        output,
-                        "      <content>{}</content>",
-                        escape_xml(content)
-                    )
-                    .unwrap();
+                    writeln!(output, "      <content>{}</content>", escape_xml(content)).unwrap();
                 }
 
                 writeln!(output, "    </file>").unwrap();
@@ -410,12 +489,8 @@ impl Formatter for XmlFormatter {
 
         // XML declaration
         writeln!(output, r#"<?xml version="1.0" encoding="UTF-8"?>"#).unwrap();
-        writeln!(
-            output,
-            r#"<repository name="{}" version="1.0.0">"#,
-            escape_xml(&repo.name)
-        )
-        .unwrap();
+        writeln!(output, r#"<repository name="{}" version="1.0.0">"#, escape_xml(&repo.name))
+            .unwrap();
 
         // LLM context guide (helps LLMs understand how to use this context)
         self.write_llm_instructions(&mut output, repo);
@@ -458,12 +533,7 @@ impl Formatter for XmlFormatter {
         let mut output = String::new();
 
         writeln!(output, r#"<?xml version="1.0" encoding="UTF-8"?>"#).unwrap();
-        writeln!(
-            output,
-            r#"<repository name="{}">"#,
-            escape_xml(&repo.name)
-        )
-        .unwrap();
+        writeln!(output, r#"<repository name="{}">"#, escape_xml(&repo.name)).unwrap();
 
         self.write_metadata(&mut output, repo);
         if self.show_file_index {
@@ -505,7 +575,7 @@ fn escape_xml(s: &str) -> String {
 mod tests {
     use super::*;
     use crate::repomap::RepoMapGenerator;
-    use crate::types::{RepoFile, RepoMetadata, TokenCounts, LanguageStats};
+    use crate::types::{LanguageStats, RepoFile, RepoMetadata, TokenCounts};
 
     fn create_test_repo() -> Repository {
         Repository {
@@ -516,13 +586,7 @@ mod tests {
                 relative_path: "main.py".to_string(),
                 language: Some("python".to_string()),
                 size_bytes: 100,
-                token_count: TokenCounts {
-                    claude: 50,
-                    gpt4o: 48,
-                    gpt4: 49,
-                    gemini: 47,
-                    llama: 46,
-                },
+                token_count: TokenCounts { claude: 50, gpt4o: 48, gpt4: 49, gemini: 47, llama: 46 },
                 symbols: Vec::new(),
                 importance: 0.8,
                 content: Some("def main():\n    print('hello')".to_string()),

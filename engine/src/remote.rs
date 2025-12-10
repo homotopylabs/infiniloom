@@ -122,17 +122,17 @@ impl RemoteRepo {
         };
 
         // Extract owner/repo from path
-        let path_start = input.find(':').ok_or_else(||
-            RemoteError::InvalidUrl("Invalid SSH URL format".to_owned())
-        )? + 1;
+        let path_start = input
+            .find(':')
+            .ok_or_else(|| RemoteError::InvalidUrl("Invalid SSH URL format".to_owned()))?
+            + 1;
         let path = &input[path_start..];
 
         Self::parse_shorthand(path, provider)
     }
 
     fn parse_https_url(input: &str) -> Result<Self, RemoteError> {
-        let url = Url::parse(input)
-            .map_err(|e| RemoteError::InvalidUrl(e.to_string()))?;
+        let url = Url::parse(input).map_err(|e| RemoteError::InvalidUrl(e.to_string()))?;
 
         let host = url.host_str().unwrap_or("");
         let provider = if host.contains("github.com") {
@@ -160,16 +160,17 @@ impl RemoteRepo {
 
     /// Clone the repository to a temporary directory
     pub fn clone(&self, target_dir: Option<&Path>) -> Result<PathBuf, RemoteError> {
-        let target = target_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                std::env::temp_dir().join(format!("infiniloom-{}-{}", self.owner.as_deref().unwrap_or("repo"), self.name))
-            });
+        let target = target_dir.map(PathBuf::from).unwrap_or_else(|| {
+            std::env::temp_dir().join(format!(
+                "infiniloom-{}-{}",
+                self.owner.as_deref().unwrap_or("repo"),
+                self.name
+            ))
+        });
 
         // Clean up existing directory
         if target.exists() {
-            std::fs::remove_dir_all(&target)
-                .map_err(|e| RemoteError::IoError(e.to_string()))?;
+            std::fs::remove_dir_all(&target).map_err(|e| RemoteError::IoError(e.to_string()))?;
         }
 
         // Build git clone command
@@ -190,7 +191,8 @@ impl RemoteRepo {
         cmd.arg(&self.url);
         cmd.arg(&target);
 
-        let output = cmd.output()
+        let output = cmd
+            .output()
             .map_err(|e| RemoteError::GitError(format!("Failed to run git: {}", e)))?;
 
         if !output.status.success() {
@@ -204,7 +206,8 @@ impl RemoteRepo {
             checkout.current_dir(&target);
             checkout.args(["checkout", reference]);
 
-            let output = checkout.output()
+            let output = checkout
+                .output()
                 .map_err(|e| RemoteError::GitError(format!("Failed to checkout: {}", e)))?;
 
             if !output.status.success() {
@@ -225,40 +228,45 @@ impl RemoteRepo {
     }
 
     /// Clone with sparse checkout (only fetch specified paths)
-    pub fn sparse_clone(&self, paths: &[&str], target_dir: Option<&Path>) -> Result<PathBuf, RemoteError> {
-        let target = target_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                std::env::temp_dir().join(format!("infiniloom-sparse-{}", self.name))
-            });
+    pub fn sparse_clone(
+        &self,
+        paths: &[&str],
+        target_dir: Option<&Path>,
+    ) -> Result<PathBuf, RemoteError> {
+        let target = target_dir.map(PathBuf::from).unwrap_or_else(|| {
+            std::env::temp_dir().join(format!("infiniloom-sparse-{}", self.name))
+        });
 
         // Clean up
         if target.exists() {
-            std::fs::remove_dir_all(&target)
-                .map_err(|e| RemoteError::IoError(e.to_string()))?;
+            std::fs::remove_dir_all(&target).map_err(|e| RemoteError::IoError(e.to_string()))?;
         }
 
         // Initialize empty repo
         let mut init = Command::new("git");
         init.args(["init", &target.to_string_lossy()]);
-        init.output().map_err(|e| RemoteError::GitError(e.to_string()))?;
+        init.output()
+            .map_err(|e| RemoteError::GitError(e.to_string()))?;
 
         // Configure sparse checkout
         let mut config = Command::new("git");
         config.current_dir(&target);
         config.args(["config", "core.sparseCheckout", "true"]);
-        config.output().map_err(|e| RemoteError::GitError(e.to_string()))?;
+        config
+            .output()
+            .map_err(|e| RemoteError::GitError(e.to_string()))?;
 
         // Add remote
         let mut remote = Command::new("git");
         remote.current_dir(&target);
         remote.args(["remote", "add", "origin", &self.url]);
-        remote.output().map_err(|e| RemoteError::GitError(e.to_string()))?;
+        remote
+            .output()
+            .map_err(|e| RemoteError::GitError(e.to_string()))?;
 
         // Write sparse checkout config
         let sparse_dir = target.join(".git/info");
-        std::fs::create_dir_all(&sparse_dir)
-            .map_err(|e| RemoteError::IoError(e.to_string()))?;
+        std::fs::create_dir_all(&sparse_dir).map_err(|e| RemoteError::IoError(e.to_string()))?;
 
         let sparse_file = sparse_dir.join("sparse-checkout");
         let sparse_content = paths.join("\n");
@@ -270,7 +278,9 @@ impl RemoteRepo {
         let mut fetch = Command::new("git");
         fetch.current_dir(&target);
         fetch.args(["fetch", "--depth", "1", "origin", branch]);
-        let output = fetch.output().map_err(|e| RemoteError::GitError(e.to_string()))?;
+        let output = fetch
+            .output()
+            .map_err(|e| RemoteError::GitError(e.to_string()))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -280,7 +290,9 @@ impl RemoteRepo {
         let mut checkout = Command::new("git");
         checkout.current_dir(&target);
         checkout.args(["checkout", "FETCH_HEAD"]);
-        checkout.output().map_err(|e| RemoteError::GitError(e.to_string()))?;
+        checkout
+            .output()
+            .map_err(|e| RemoteError::GitError(e.to_string()))?;
 
         Ok(target)
     }

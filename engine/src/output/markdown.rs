@@ -135,7 +135,9 @@ impl MarkdownFormatter {
             for edge in &map.module_graph.edges {
                 // Replace special chars with underscores for Mermaid IDs
                 let sanitize_id = |s: &str| -> String {
-                    s.chars().map(|c| if c == '-' || c == '.' { '_' } else { c }).collect()
+                    s.chars()
+                        .map(|c| if c == '-' || c == '.' { '_' } else { c })
+                        .collect()
                 };
                 let from_id = sanitize_id(&edge.from);
                 let to_id = sanitize_id(&edge.to);
@@ -162,7 +164,11 @@ impl MarkdownFormatter {
         writeln!(output, "```").unwrap();
 
         // Build tree structure
-        let mut paths: Vec<_> = repo.files.iter().map(|f| f.relative_path.as_str()).collect();
+        let mut paths: Vec<_> = repo
+            .files
+            .iter()
+            .map(|f| f.relative_path.as_str())
+            .collect();
         paths.sort();
 
         // Simple tree rendering
@@ -183,7 +189,11 @@ impl MarkdownFormatter {
             // Print new parts
             for (i, part) in parts.iter().enumerate().skip(common) {
                 let indent = "  ".repeat(i);
-                let prefix = if i == parts.len() - 1 { "📄 " } else { "📁 " };
+                let prefix = if i == parts.len() - 1 {
+                    "📄 "
+                } else {
+                    "📁 "
+                };
                 writeln!(output, "{}{}{}", indent, prefix, part).unwrap();
             }
 
@@ -281,13 +291,7 @@ mod tests {
                 relative_path: "main.py".to_string(),
                 language: Some("python".to_string()),
                 size_bytes: 100,
-                token_count: TokenCounts {
-                    claude: 50,
-                    gpt4o: 48,
-                    gpt4: 49,
-                    gemini: 47,
-                    llama: 46,
-                },
+                token_count: TokenCounts { claude: 50, gpt4o: 48, gpt4: 49, gemini: 47, llama: 46 },
                 symbols: Vec::new(),
                 importance: 0.8,
                 content: Some("def main():\n    print('hello')".to_string()),

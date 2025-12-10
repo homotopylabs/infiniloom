@@ -16,11 +16,9 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use infiniloom_engine::types::{
-    LanguageStats, RepoFile, RepoMetadata, Repository, TokenCounts,
-};
-use infiniloom_engine::parser::{Parser, Language};
 use infiniloom_engine::dependencies::DependencyGraph;
+use infiniloom_engine::parser::{Language, Parser};
+use infiniloom_engine::types::{LanguageStats, RepoFile, RepoMetadata, Repository, TokenCounts};
 use infiniloom_engine::ZigCore;
 
 // Thread-local parser for each rayon worker
@@ -105,7 +103,8 @@ pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Reposit
     let repo_name = path
         .file_name()
         .and_then(|n| n.to_str())
-        .unwrap_or("repository").to_owned();
+        .unwrap_or("repository")
+        .to_owned();
 
     // Try Zig core first if enabled
     if config.use_zig_core {
@@ -145,11 +144,15 @@ pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Reposit
 
     // Phase 3: Aggregate statistics
     let total_files = files.len() as u32;
-    let total_lines: u64 = files.iter().map(|f| {
-        f.content.as_ref()
-            .map(|c| c.lines().count() as u64)
-            .unwrap_or_else(|| estimate_lines(f.size_bytes))
-    }).sum();
+    let total_lines: u64 = files
+        .iter()
+        .map(|f| {
+            f.content
+                .as_ref()
+                .map(|c| c.lines().count() as u64)
+                .unwrap_or_else(|| estimate_lines(f.size_bytes))
+        })
+        .sum();
 
     let mut language_counts: HashMap<String, u32> = HashMap::new();
     for file in &files {
@@ -166,12 +169,7 @@ pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Reposit
             } else {
                 0.0
             };
-            LanguageStats {
-                language: lang,
-                files: count,
-                lines: 0,
-                percentage,
-            }
+            LanguageStats { language: lang, files: count, lines: 0, percentage }
         })
         .collect();
 
@@ -195,7 +193,8 @@ pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Reposit
         metadata: RepoMetadata::default(),
     };
     let dep_graph = DependencyGraph::build(&temp_repo);
-    let mut external_dependencies: Vec<String> = dep_graph.get_external_deps().iter().cloned().collect();
+    let mut external_dependencies: Vec<String> =
+        dep_graph.get_external_deps().iter().cloned().collect();
     external_dependencies.sort();
 
     Ok(Repository {
@@ -530,7 +529,12 @@ fn detect_git_branch(path: &Path) -> Option<String> {
     let content = std::fs::read_to_string(head_path).ok()?;
 
     if content.starts_with("ref: refs/heads/") {
-        Some(content.trim_start_matches("ref: refs/heads/").trim().to_owned())
+        Some(
+            content
+                .trim_start_matches("ref: refs/heads/")
+                .trim()
+                .to_owned(),
+        )
     } else {
         // Detached HEAD - safely take first 7 characters
         Some(content.trim().chars().take(7).collect())
@@ -572,12 +576,7 @@ fn scan_with_zig_core(
 
     // Perform fast directory scan with Zig
     let scan_result = zig_core
-        .scan(
-            &path_str,
-            config.include_hidden,
-            config.respect_gitignore,
-            config.max_file_size,
-        )
+        .scan(&path_str, config.include_hidden, config.respect_gitignore, config.max_file_size)
         .map_err(|e| anyhow::anyhow!("Zig scan failed: {}", e))?;
 
     log::info!(
@@ -602,7 +601,8 @@ fn scan_with_zig_core(
 
             // Parse symbols if needed
             let symbols = if config.read_contents && !config.skip_symbols {
-                content.as_ref()
+                content
+                    .as_ref()
                     .map(|c| parse_with_thread_local(c, Path::new(&zig_file.path)))
                     .unwrap_or_default()
             } else {
@@ -651,12 +651,7 @@ fn scan_with_zig_core(
             } else {
                 0.0
             };
-            LanguageStats {
-                language: lang,
-                files: count,
-                lines: 0,
-                percentage,
-            }
+            LanguageStats { language: lang, files: count, lines: 0, percentage }
         })
         .collect();
 
@@ -669,11 +664,15 @@ fn scan_with_zig_core(
         llama: files.iter().map(|f| f.token_count.llama).sum(),
     };
 
-    let total_lines: u64 = files.iter().map(|f| {
-        f.content.as_ref()
-            .map(|c| c.lines().count() as u64)
-            .unwrap_or_else(|| estimate_lines(f.size_bytes))
-    }).sum();
+    let total_lines: u64 = files
+        .iter()
+        .map(|f| {
+            f.content
+                .as_ref()
+                .map(|c| c.lines().count() as u64)
+                .unwrap_or_else(|| estimate_lines(f.size_bytes))
+        })
+        .sum();
 
     let branch = detect_git_branch(path);
     let commit = detect_git_commit(path);
@@ -687,7 +686,8 @@ fn scan_with_zig_core(
         metadata: RepoMetadata::default(),
     };
     let dep_graph = DependencyGraph::build(&temp_repo);
-    let mut external_dependencies: Vec<String> = dep_graph.get_external_deps().iter().cloned().collect();
+    let mut external_dependencies: Vec<String> =
+        dep_graph.get_external_deps().iter().cloned().collect();
     external_dependencies.sort();
 
     Ok(Repository {
@@ -802,18 +802,9 @@ mod tests {
 
     #[test]
     fn test_detect_language() {
-        assert_eq!(
-            detect_language(&PathBuf::from("test.py")),
-            Some("python".to_string())
-        );
-        assert_eq!(
-            detect_language(&PathBuf::from("test.rs")),
-            Some("rust".to_string())
-        );
-        assert_eq!(
-            detect_language(&PathBuf::from("test.ts")),
-            Some("typescript".to_string())
-        );
+        assert_eq!(detect_language(&PathBuf::from("test.py")), Some("python".to_string()));
+        assert_eq!(detect_language(&PathBuf::from("test.rs")), Some("rust".to_string()));
+        assert_eq!(detect_language(&PathBuf::from("test.ts")), Some("typescript".to_string()));
         assert_eq!(detect_language(&PathBuf::from("test")), None);
     }
 

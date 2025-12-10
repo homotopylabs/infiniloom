@@ -42,12 +42,7 @@ fn build_zig_core() {
     // Build the Zig library
     let status = Command::new("zig")
         .current_dir(&core_dir)
-        .args([
-            "build",
-            &format!("-Doptimize={}", optimize),
-            "-p",
-            &out_dir,
-        ])
+        .args(["build", &format!("-Doptimize={}", optimize), "-p", &out_dir])
         .status()
         .expect("Failed to run zig build");
 

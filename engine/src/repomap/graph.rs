@@ -40,19 +40,13 @@ pub(super) struct SymbolGraph {
 impl SymbolGraph {
     /// Create a new empty graph
     pub(super) fn new() -> Self {
-        Self {
-            graph: DiGraph::new(),
-            symbol_indices: HashMap::new(),
-        }
+        Self { graph: DiGraph::new(), symbol_indices: HashMap::new() }
     }
 
     /// Add all symbols from a file
     pub(super) fn add_file(&mut self, file: &RepoFile) {
         for symbol in &file.symbols {
-            let node = SymbolNode {
-                symbol: symbol.clone(),
-                file_path: file.relative_path.clone(),
-            };
+            let node = SymbolNode { symbol: symbol.clone(), file_path: file.relative_path.clone() };
 
             let idx = self.graph.add_node(node);
             let key = format!("{}:{}", file.relative_path, symbol.name);
@@ -125,7 +119,11 @@ impl SymbolGraph {
     }
 
     /// Get top N symbols using pre-computed ranks
-    pub(super) fn get_top_symbols_with_ranks(&self, ranks: &HashMap<String, f64>, n: usize) -> Vec<&SymbolNode> {
+    pub(super) fn get_top_symbols_with_ranks(
+        &self,
+        ranks: &HashMap<String, f64>,
+        n: usize,
+    ) -> Vec<&SymbolNode> {
         let mut ranked: Vec<_> = self
             .graph
             .node_indices()

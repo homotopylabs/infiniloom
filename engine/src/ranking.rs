@@ -1,8 +1,8 @@
 //! Symbol importance ranking
 
-use crate::types::{Repository, Symbol, SymbolKind};
 #[cfg(test)]
 use crate::types::RepoFile;
+use crate::types::{Repository, Symbol, SymbolKind};
 use std::collections::HashMap;
 
 /// Symbol ranker using multiple heuristics
@@ -19,12 +19,7 @@ pub struct SymbolRanker {
 
 impl Default for SymbolRanker {
     fn default() -> Self {
-        Self {
-            reference_weight: 0.4,
-            type_weight: 0.25,
-            file_weight: 0.2,
-            size_weight: 0.15,
-        }
+        Self { reference_weight: 0.4, type_weight: 0.25, file_weight: 0.2, size_weight: 0.15 }
     }
 }
 
@@ -144,56 +139,147 @@ fn type_importance(kind: SymbolKind) -> f32 {
 pub fn rank_files(repo: &mut Repository) {
     // Critical entry point patterns (highest priority)
     let critical_entry_patterns = [
-        "__main__.py", "main.rs", "main.go", "main.c", "main.cpp", "main.ts", "main.js",
-        "index.ts", "index.js", "index.tsx", "index.jsx",
-        "app.ts", "app.js", "app.py", "app.go", "app.rb",
-        "server.ts", "server.js", "server.py", "server.go",
-        "cli.rs", "cli.ts", "cli.js", "cli.py",
-        "lib.rs", "mod.rs",
+        "__main__.py",
+        "main.rs",
+        "main.go",
+        "main.c",
+        "main.cpp",
+        "main.ts",
+        "main.js",
+        "index.ts",
+        "index.js",
+        "index.tsx",
+        "index.jsx",
+        "app.ts",
+        "app.js",
+        "app.py",
+        "app.go",
+        "app.rb",
+        "server.ts",
+        "server.js",
+        "server.py",
+        "server.go",
+        "cli.rs",
+        "cli.ts",
+        "cli.js",
+        "cli.py",
+        "lib.rs",
+        "mod.rs",
     ];
 
     // Important implementation directories
-    let core_dirs = [
-        "/src/", "/lib/", "/core/", "/pkg/", "/internal/",
-        "/app/", "/cmd/", "/bin/", "/crates/",
-    ];
+    let core_dirs =
+        ["/src/", "/lib/", "/core/", "/pkg/", "/internal/", "/app/", "/cmd/", "/bin/", "/crates/"];
 
     // Entry point file prefixes (less specific)
     let entry_prefixes = [
-        "main.", "index.", "app.", "server.", "cli.", "mod.", "lib.",
-        "init.", "__init__.", "entry.", "bootstrap.",
+        "main.",
+        "index.",
+        "app.",
+        "server.",
+        "cli.",
+        "mod.",
+        "lib.",
+        "init.",
+        "__init__.",
+        "entry.",
+        "bootstrap.",
     ];
 
     // Documentation (medium-low importance but still useful)
-    let doc_patterns = [
-        "readme.", "changelog.", "contributing.", "license.", "authors.",
-    ];
+    let doc_patterns = ["readme.", "changelog.", "contributing.", "license.", "authors."];
 
     // Config patterns (low importance - metadata not code)
     let config_patterns = [
-        "config.", "settings.", ".config", "package.json", "cargo.toml",
-        "pyproject.toml", "setup.py", "setup.cfg", "tsconfig.", "webpack.",
-        ".eslint", ".prettier", "jest.config", "vite.config", ".env",
-        "makefile", "dockerfile", "docker-compose", ".github/", ".gitlab",
+        "config.",
+        "settings.",
+        ".config",
+        "package.json",
+        "cargo.toml",
+        "pyproject.toml",
+        "setup.py",
+        "setup.cfg",
+        "tsconfig.",
+        "webpack.",
+        ".eslint",
+        ".prettier",
+        "jest.config",
+        "vite.config",
+        ".env",
+        "makefile",
+        "dockerfile",
+        "docker-compose",
+        ".github/",
+        ".gitlab",
     ];
 
     // Test patterns (lowest priority for code understanding)
     // Note: Use both with and without leading slash to match root dirs
     let test_patterns = [
-        "test_", "_test.", ".test.", "spec.", "_spec.",
-        "/tests/", "tests/", "/test/", "test/", "/__tests__/", "__tests__/", "/testing/", "testing/",
-        "/fixtures/", "fixtures/", "/mocks/", "mocks/", "mock_", "_mock.",
-        "/e2e/", "e2e/", "/integration/", "integration/", "/unit/", "unit/",
-        "/examples/", "examples/", "/example/", "example/", "/benchmark/", "benchmark/",
+        "test_",
+        "_test.",
+        ".test.",
+        "spec.",
+        "_spec.",
+        "/tests/",
+        "tests/",
+        "/test/",
+        "test/",
+        "/__tests__/",
+        "__tests__/",
+        "/testing/",
+        "testing/",
+        "/fixtures/",
+        "fixtures/",
+        "/mocks/",
+        "mocks/",
+        "mock_",
+        "_mock.",
+        "/e2e/",
+        "e2e/",
+        "/integration/",
+        "integration/",
+        "/unit/",
+        "unit/",
+        "/examples/",
+        "examples/",
+        "/example/",
+        "example/",
+        "/benchmark/",
+        "benchmark/",
     ];
 
     // Vendor/generated patterns (exclude or very low priority)
     let vendor_patterns = [
-        "/vendor/", "vendor/", "/node_modules/", "node_modules/", "/dist/", "dist/", "/build/", "build/", "/target/", "target/",
-        "/__pycache__/", "__pycache__/", "/.next/", ".next/", "/coverage/", "coverage/", "/.cache/", ".cache/",
-        "/generated/", "generated/", "/.generated/", ".generated/", "/gen/", "gen/",
-        ".min.js", ".min.css", ".bundle.",
-        "/benchmarks/", "benchmarks/",
+        "/vendor/",
+        "vendor/",
+        "/node_modules/",
+        "node_modules/",
+        "/dist/",
+        "dist/",
+        "/build/",
+        "build/",
+        "/target/",
+        "target/",
+        "/__pycache__/",
+        "__pycache__/",
+        "/.next/",
+        ".next/",
+        "/coverage/",
+        "coverage/",
+        "/.cache/",
+        ".cache/",
+        "/generated/",
+        "generated/",
+        "/.generated/",
+        ".generated/",
+        "/gen/",
+        "gen/",
+        ".min.js",
+        ".min.css",
+        ".bundle.",
+        "/benchmarks/",
+        "benchmarks/",
     ];
 
     for file in &mut repo.files {
@@ -211,7 +297,10 @@ pub fn rank_files(repo: &mut Repository) {
             importance = 0.15;
         }
         // Check config patterns (low priority)
-        else if config_patterns.iter().any(|p| filename.contains(p) || path.contains(p)) {
+        else if config_patterns
+            .iter()
+            .any(|p| filename.contains(p) || path.contains(p))
+        {
             importance = 0.25;
         }
         // Check doc patterns
@@ -236,8 +325,8 @@ pub fn rank_files(repo: &mut Repository) {
         }
 
         // Only apply boosts if not in test/vendor directories
-        let is_test_or_vendor = vendor_patterns.iter().any(|p| path.contains(p)) ||
-                                test_patterns.iter().any(|p| path.contains(p));
+        let is_test_or_vendor = vendor_patterns.iter().any(|p| path.contains(p))
+            || test_patterns.iter().any(|p| path.contains(p));
 
         if !is_test_or_vendor {
             // Boost based on symbol count (more symbols = more important code)
@@ -245,10 +334,15 @@ pub fn rank_files(repo: &mut Repository) {
             importance = (importance + symbol_boost).min(1.0);
 
             // Slight boost for files with common implementation names
-            if filename.contains("handler") || filename.contains("service") ||
-               filename.contains("controller") || filename.contains("model") ||
-               filename.contains("util") || filename.contains("helper") ||
-               filename.contains("router") || filename.contains("middleware") {
+            if filename.contains("handler")
+                || filename.contains("service")
+                || filename.contains("controller")
+                || filename.contains("model")
+                || filename.contains("util")
+                || filename.contains("helper")
+                || filename.contains("router")
+                || filename.contains("middleware")
+            {
                 importance = (importance + 0.1).min(1.0);
             }
         }
@@ -260,7 +354,9 @@ pub fn rank_files(repo: &mut Repository) {
 /// Sort repository files by importance (highest first)
 pub fn sort_files_by_importance(repo: &mut Repository) {
     repo.files.sort_by(|a, b| {
-        b.importance.partial_cmp(&a.importance).unwrap_or(std::cmp::Ordering::Equal)
+        b.importance
+            .partial_cmp(&a.importance)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
 }
 

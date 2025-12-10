@@ -102,10 +102,7 @@ impl Parser {
     /// Create a new parser instance with lazy initialization
     /// Parsers and queries are created on-demand when parse() is called
     pub fn new() -> Self {
-        Self {
-            parsers: HashMap::new(),
-            queries: HashMap::new(),
-        }
+        Self { parsers: HashMap::new(), queries: HashMap::new() }
     }
 
     /// Ensure parser and query are initialized for a language
@@ -114,8 +111,12 @@ impl Parser {
         if let Entry::Vacant(parser_entry) = self.parsers.entry(language) {
             let (parser, query) = match language {
                 Language::Python => (Self::init_python_parser()?, Self::python_query()?),
-                Language::JavaScript => (Self::init_javascript_parser()?, Self::javascript_query()?),
-                Language::TypeScript => (Self::init_typescript_parser()?, Self::typescript_query()?),
+                Language::JavaScript => {
+                    (Self::init_javascript_parser()?, Self::javascript_query()?)
+                },
+                Language::TypeScript => {
+                    (Self::init_typescript_parser()?, Self::typescript_query()?)
+                },
                 Language::Rust => (Self::init_rust_parser()?, Self::rust_query()?),
                 Language::Go => (Self::init_go_parser()?, Self::go_query()?),
                 Language::Java => (Self::init_java_parser()?, Self::java_query()?),
@@ -204,16 +205,8 @@ impl Parser {
             capture_names
                 .get(c.index as usize)
                 .map(|n| {
-                    [
-                        "function",
-                        "class",
-                        "method",
-                        "struct",
-                        "enum",
-                        "interface",
-                        "trait",
-                    ]
-                    .contains(n)
+                    ["function", "class", "method", "struct", "enum", "interface", "trait"]
+                        .contains(n)
                 })
                 .unwrap_or(false)
         })?;
@@ -294,14 +287,10 @@ impl Parser {
                             break;
                         }
                     }
-                    return Some(
-                        source_code[start..end]
-                            .trim().to_owned()
-                            .replace('\n', " "),
-                    );
+                    return Some(source_code[start..end].trim().to_owned().replace('\n', " "));
                 }
                 None
-            }
+            },
             Language::JavaScript | Language::TypeScript => {
                 // For JS/TS, try to find the function declaration
                 if node.kind().contains("function") || node.kind().contains("method") {
@@ -318,14 +307,10 @@ impl Parser {
                         }
                         end += 1;
                     }
-                    return Some(
-                        source_code[start..end]
-                            .trim().to_owned()
-                            .replace('\n', " "),
-                    );
+                    return Some(source_code[start..end].trim().to_owned().replace('\n', " "));
                 }
                 None
-            }
+            },
             Language::Rust => {
                 // For Rust, get the function signature
                 if node.kind() == "function_item" {
@@ -335,15 +320,13 @@ impl Parser {
                             let start = node.start_byte();
                             let end = child.start_byte();
                             return Some(
-                                source_code[start..end]
-                                    .trim().to_owned()
-                                    .replace('\n', " "),
+                                source_code[start..end].trim().to_owned().replace('\n', " "),
                             );
                         }
                     }
                 }
                 None
-            }
+            },
             Language::Go => {
                 // For Go, get function declaration
                 if node.kind() == "function_declaration" || node.kind() == "method_declaration" {
@@ -352,15 +335,13 @@ impl Parser {
                             let start = node.start_byte();
                             let end = child.start_byte();
                             return Some(
-                                source_code[start..end]
-                                    .trim().to_owned()
-                                    .replace('\n', " "),
+                                source_code[start..end].trim().to_owned().replace('\n', " "),
                             );
                         }
                     }
                 }
                 None
-            }
+            },
             Language::Java => {
                 // For Java, get method declaration
                 if node.kind() == "method_declaration" {
@@ -369,15 +350,13 @@ impl Parser {
                             let start = node.start_byte();
                             let end = child.start_byte();
                             return Some(
-                                source_code[start..end]
-                                    .trim().to_owned()
-                                    .replace('\n', " "),
+                                source_code[start..end].trim().to_owned().replace('\n', " "),
                             );
                         }
                     }
                 }
                 None
-            }
+            },
         };
 
         sig_node.or_else(|| {
@@ -411,7 +390,8 @@ impl Parser {
                                             // Remove quotes and clean up
                                             return Some(
                                                 text.trim_matches(|c| c == '"' || c == '\'')
-                                                    .trim().to_owned(),
+                                                    .trim()
+                                                    .to_owned(),
                                             );
                                         }
                                     }
@@ -421,7 +401,7 @@ impl Parser {
                     }
                 }
                 None
-            }
+            },
             Language::JavaScript | Language::TypeScript => {
                 // Look for JSDoc comment immediately before the node
                 if let Some(prev_sibling) = node.prev_sibling() {
@@ -434,7 +414,7 @@ impl Parser {
                     }
                 }
                 None
-            }
+            },
             Language::Rust => {
                 // Look for doc comment (///) above the node
                 let start_byte = node.start_byte();
@@ -459,7 +439,7 @@ impl Parser {
                     }
                 }
                 None
-            }
+            },
             Language::Go => {
                 // Look for comment immediately before
                 if let Some(prev_sibling) = node.prev_sibling() {
@@ -470,7 +450,7 @@ impl Parser {
                     }
                 }
                 None
-            }
+            },
             Language::Java => {
                 // Look for JavaDoc comment
                 if let Some(prev_sibling) = node.prev_sibling() {
@@ -483,7 +463,7 @@ impl Parser {
                     }
                 }
                 None
-            }
+            },
         }
     }
 

@@ -312,10 +312,13 @@ impl ZigCore {
                 None
             } else {
                 Some(
-                    std::slice::from_raw_parts(info.language as *const u8, info.language_len as usize)
-                        .iter()
-                        .map(|&c| c as char)
-                        .collect(),
+                    std::slice::from_raw_parts(
+                        info.language as *const u8,
+                        info.language_len as usize,
+                    )
+                    .iter()
+                    .map(|&c| c as char)
+                    .collect(),
                 )
             }
         };
@@ -398,7 +401,9 @@ impl ZigCore {
         if result_len < 0 {
             return Err(match result_len {
                 -1 => "Invalid context".to_string(),
-                -2 => self.last_error().unwrap_or_else(|| "Compression failed".to_string()),
+                -2 => self
+                    .last_error()
+                    .unwrap_or_else(|| "Compression failed".to_string()),
                 -3 => "Buffer too small".to_string(),
                 _ => format!("Unknown error: {}", result_len),
             });

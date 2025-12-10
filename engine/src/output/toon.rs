@@ -23,11 +23,7 @@ pub struct ToonFormatter {
 impl ToonFormatter {
     /// Create a new TOON formatter with default settings
     pub fn new() -> Self {
-        Self {
-            include_line_numbers: true,
-            use_tabular: true,
-            show_file_index: true,
-        }
+        Self { include_line_numbers: true, use_tabular: true, show_file_index: true }
     }
 
     /// Set line numbers option
@@ -124,7 +120,8 @@ impl ToonFormatter {
                     escape_toon(&sym.file),
                     sym.line,
                     sym.rank
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
 
@@ -139,7 +136,8 @@ impl ToonFormatter {
                     escape_toon(&module.name),
                     module.files,
                     module.tokens
-                ).unwrap();
+                )
+                .unwrap();
             }
         }
         output.push('\n');
@@ -168,7 +166,8 @@ impl ToonFormatter {
                 escape_toon(&file.relative_path),
                 file.token_count.claude,
                 importance
-            ).unwrap();
+            )
+            .unwrap();
         }
         output.push('\n');
     }
@@ -180,8 +179,14 @@ impl ToonFormatter {
             if let Some(ref content) = file.content {
                 // Compact file header: path|language|tokens
                 let lang = file.language.as_deref().unwrap_or("?");
-                writeln!(output, "- {}|{}|{}:",
-                    escape_toon(&file.relative_path), lang, file.token_count.claude).unwrap();
+                writeln!(
+                    output,
+                    "- {}|{}|{}:",
+                    escape_toon(&file.relative_path),
+                    lang,
+                    file.token_count.claude
+                )
+                .unwrap();
 
                 // Content with minimal line numbers
                 if self.include_line_numbers {
@@ -292,7 +297,7 @@ fn escape_toon(s: &str) -> String {
 mod tests {
     use super::*;
     use crate::repomap::RepoMapGenerator;
-    use crate::types::{RepoFile, RepoMetadata, TokenCounts, LanguageStats};
+    use crate::types::{LanguageStats, RepoFile, RepoMetadata, TokenCounts};
 
     fn create_test_repo() -> Repository {
         Repository {
@@ -303,13 +308,7 @@ mod tests {
                 relative_path: "main.py".to_string(),
                 language: Some("python".to_string()),
                 size_bytes: 100,
-                token_count: TokenCounts {
-                    claude: 50,
-                    gpt4o: 48,
-                    gpt4: 49,
-                    gemini: 47,
-                    llama: 46,
-                },
+                token_count: TokenCounts { claude: 50, gpt4o: 48, gpt4: 49, gemini: 47, llama: 46 },
                 symbols: Vec::new(),
                 importance: 0.8,
                 content: Some("def main():\n    print('hello')".to_string()),

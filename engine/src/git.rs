@@ -94,9 +94,7 @@ impl GitRepo {
             return Err(GitError::NotAGitRepo);
         }
 
-        Ok(Self {
-            path: path.to_string_lossy().to_string(),
-        })
+        Ok(Self { path: path.to_string_lossy().to_string() })
     }
 
     /// Check if path is a git repository
@@ -124,9 +122,7 @@ impl GitRepo {
 
     /// Get files changed between two commits
     pub fn diff_files(&self, from: &str, to: &str) -> Result<Vec<ChangedFile>, GitError> {
-        let output = self.run_git(&[
-            "diff", "--name-status", "--numstat", from, to
-        ])?;
+        let output = self.run_git(&["diff", "--name-status", "--numstat", from, to])?;
 
         let mut files = Vec::new();
 
@@ -155,7 +151,9 @@ impl GitRepo {
 
             // Parse as name-status format
             if parts.len() >= 2 {
-                let status = parts[0].chars().next()
+                let status = parts[0]
+                    .chars()
+                    .next()
                     .map(FileStatus::from_char)
                     .unwrap_or(FileStatus::Unknown);
                 files.push(ChangedFile {
@@ -192,12 +190,7 @@ impl GitRepo {
                 _ => FileStatus::Unknown,
             };
 
-            files.push(ChangedFile {
-                path,
-                status,
-                additions: 0,
-                deletions: 0,
-            });
+            files.push(ChangedFile { path, status, additions: 0, deletions: 0 });
         }
 
         Ok(files)
@@ -209,7 +202,7 @@ impl GitRepo {
             "log",
             &format!("-{}", count),
             "--format=%H%n%h%n%an%n%ae%n%ad%n%s%n---COMMIT---",
-            "--date=short"
+            "--date=short",
         ])?;
 
         let mut commits = Vec::new();
@@ -233,14 +226,7 @@ impl GitRepo {
             }
             lines.next(); // Skip the separator
 
-            commits.push(Commit {
-                hash,
-                short_hash,
-                author,
-                email,
-                date,
-                message,
-            });
+            commits.push(Commit { hash, short_hash, author, email, date, message });
         }
 
         Ok(commits)
@@ -255,7 +241,7 @@ impl GitRepo {
             "--date=short",
             "--follow",
             "--",
-            path
+            path,
         ])?;
 
         let mut commits = Vec::new();
@@ -282,11 +268,7 @@ impl GitRepo {
 
     /// Get blame information for a file
     pub fn blame(&self, path: &str) -> Result<Vec<BlameLine>, GitError> {
-        let output = self.run_git(&[
-            "blame",
-            "--porcelain",
-            path
-        ])?;
+        let output = self.run_git(&["blame", "--porcelain", path])?;
 
         let mut lines = Vec::new();
         let mut current_commit = String::new();
@@ -345,7 +327,9 @@ impl GitRepo {
     /// Get the commit where a file was last modified
     pub fn last_modified_commit(&self, path: &str) -> Result<Commit, GitError> {
         let commits = self.file_log(path, 1)?;
-        commits.into_iter().next()
+        commits
+            .into_iter()
+            .next()
             .ok_or_else(|| GitError::ParseError("No commits found".to_owned()))
     }
 
@@ -357,7 +341,7 @@ impl GitRepo {
             "--oneline",
             "--follow",
             "--",
-            path
+            path,
         ])?;
 
         Ok(output.lines().count() as u32)
@@ -376,8 +360,7 @@ impl GitRepo {
             return Err(GitError::CommandFailed(stderr.to_string()));
         }
 
-        String::from_utf8(output.stdout)
-            .map_err(|e| GitError::ParseError(e.to_string()))
+        String::from_utf8(output.stdout).map_err(|e| GitError::ParseError(e.to_string()))
     }
 }
 
@@ -432,8 +415,8 @@ fn is_leap_year(year: i64) -> bool {
 #[allow(clippy::str_to_string)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::process::Command;
+    use tempfile::TempDir;
 
     fn init_test_repo() -> TempDir {
         let temp = TempDir::new().unwrap();

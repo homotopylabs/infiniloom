@@ -17,7 +17,6 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     ".pnpm/**",
     "bower_components/**",
     "jspm_packages/**",
-
     // === Build outputs ===
     "dist/**",
     "build/**",
@@ -30,14 +29,12 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     ".svelte-kit/**",
     ".vercel/**",
     ".netlify/**",
-
     // === Minified/bundled files ===
     "*.min.js",
     "*.min.css",
     "*.bundle.js",
     "*.chunk.js",
     "*.min.map",
-
     // === Generated code ===
     "*.generated.*",
     "*.pb.go",
@@ -47,7 +44,6 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     "*.gen.ts",
     "*.gen.js",
     "__generated__/**",
-
     // === Lock files (large, not useful for understanding) ===
     "package-lock.json",
     "yarn.lock",
@@ -59,7 +55,6 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     "Pipfile.lock",
     "bun.lockb",
     "flake.lock",
-
     // === Assets (binary or not code) ===
     "*.svg",
     "*.png",
@@ -90,7 +85,6 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     "*.mkv",
     "*.flv",
     "*.pdf",
-
     // === IDE/Editor ===
     ".idea/**",
     ".vscode/**",
@@ -100,7 +94,6 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     ".DS_Store",
     "Thumbs.db",
     "*.iml",
-
     // === Coverage/Reports ===
     "coverage/**",
     ".nyc_output/**",
@@ -108,46 +101,37 @@ pub const DEFAULT_IGNORES: &[&str] = &[
     ".coverage",
     "lcov.info",
     "*.lcov",
-
     // === Logs ===
     "*.log",
     "logs/**",
     "npm-debug.log*",
     "yarn-debug.log*",
     "yarn-error.log*",
-
     // === Temporary files ===
     "tmp/**",
     "temp/**",
     ".tmp/**",
     ".temp/**",
-
     // === Database files ===
     "*.db",
     "*.sqlite",
     "*.sqlite3",
-
     // === Large data files ===
     "*.csv",
     "*.parquet",
     "*.arrow",
     "*.feather",
-
     // === Snapshots (usually large, auto-generated) ===
     "__snapshots__/**",
     "*.snap",
-
     // === Type definition bundles ===
     "*.d.ts.map",
-
     // === WASM ===
     "*.wasm",
-
     // === Compiled Python ===
     "*.pyc",
     "*.pyo",
     "*.pyd",
-
     // === Misc ===
     ".git/**",
     ".hg/**",

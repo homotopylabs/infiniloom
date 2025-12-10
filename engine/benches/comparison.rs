@@ -125,11 +125,7 @@ class Class_{}_{} {{{{
     }
 
     // Create .gitignore
-    fs::write(
-        base.join(".gitignore"),
-        "target/\nnode_modules/\n__pycache__/\n",
-    )
-    .unwrap();
+    fs::write(base.join(".gitignore"), "target/\nnode_modules/\n__pycache__/\n").unwrap();
 
     temp_dir
 }
@@ -145,45 +141,37 @@ fn bench_file_traversal(c: &mut Criterion) {
         let path = temp.path().to_path_buf();
 
         group.throughput(Throughput::Elements(*num_files as u64));
-        group.bench_with_input(
-            BenchmarkId::new("walkdir", name),
-            &path,
-            |b, path| {
-                b.iter(|| {
-                    let mut count = 0;
-                    for entry in walkdir::WalkDir::new(path)
-                        .into_iter()
-                        .filter_map(|e| e.ok())
-                    {
-                        if entry.file_type().is_file() {
-                            count += 1;
-                        }
+        group.bench_with_input(BenchmarkId::new("walkdir", name), &path, |b, path| {
+            b.iter(|| {
+                let mut count = 0;
+                for entry in walkdir::WalkDir::new(path)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                {
+                    if entry.file_type().is_file() {
+                        count += 1;
                     }
-                    black_box(count)
-                })
-            },
-        );
+                }
+                black_box(count)
+            })
+        });
 
-        group.bench_with_input(
-            BenchmarkId::new("ignore_crate", name),
-            &path,
-            |b, path| {
-                b.iter(|| {
-                    let mut count = 0;
-                    for entry in ignore::WalkBuilder::new(path)
-                        .hidden(false)
-                        .git_ignore(true)
-                        .build()
-                        .filter_map(|e| e.ok())
-                    {
-                        if entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
-                            count += 1;
-                        }
+        group.bench_with_input(BenchmarkId::new("ignore_crate", name), &path, |b, path| {
+            b.iter(|| {
+                let mut count = 0;
+                for entry in ignore::WalkBuilder::new(path)
+                    .hidden(false)
+                    .git_ignore(true)
+                    .build()
+                    .filter_map(|e| e.ok())
+                {
+                    if entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
+                        count += 1;
                     }
-                    black_box(count)
-                })
-            },
-        );
+                }
+                black_box(count)
+            })
+        });
     }
 
     group.finish();
@@ -250,9 +238,7 @@ fn bench_line_counting(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("line_counting");
 
-    group.bench_function("lines_iterator", |b| {
-        b.iter(|| black_box(file_content.lines().count()))
-    });
+    group.bench_function("lines_iterator", |b| b.iter(|| black_box(file_content.lines().count())));
 
     group.bench_function("matches_newline", |b| {
         b.iter(|| black_box(file_content.matches('\n').count() + 1))
@@ -473,8 +459,8 @@ function connect() {
 
     // Single pattern
     group.bench_function("single_regex", |b| {
-        let re = Regex::new(r#"(?i)(password|secret|api_key|token)\s*[=:]\s*['"][^'"]+['"]"#)
-            .unwrap();
+        let re =
+            Regex::new(r#"(?i)(password|secret|api_key|token)\s*[=:]\s*['"][^'"]+['"]"#).unwrap();
         b.iter(|| black_box(re.find_iter(&content).count()))
     });
 

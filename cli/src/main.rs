@@ -332,9 +332,7 @@ impl From<Compression> for CompressionLevel {
 
 fn main() -> Result<()> {
     // Initialize logging
-    env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("warn")
-    ).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
     let cli = Cli::parse();
 
@@ -385,8 +383,8 @@ fn main() -> Result<()> {
             output,
             hidden,
             !no_gitignore,
-            symbols || full,  // Enable symbols if --symbols or --full
-            full,             // Full mode for PageRank ranking
+            symbols || full, // Enable symbols if --symbols or --full
+            full,            // Full mode for PageRank ranking
             include_tests,
             include_docs,
             !no_default_ignores,
@@ -414,24 +412,12 @@ fn main() -> Result<()> {
             config,
             watch,
         ),
-        Commands::Scan {
-            path,
-            model,
-            hidden,
-            verbose,
-            json,
-        } => cmd_scan(path, model.into(), hidden, verbose, json),
-        Commands::Map {
-            path,
-            budget,
-            output,
-        } => cmd_map(path, budget, output),
+        Commands::Scan { path, model, hidden, verbose, json } => {
+            cmd_scan(path, model.into(), hidden, verbose, json)
+        },
+        Commands::Map { path, budget, output } => cmd_map(path, budget, output),
         Commands::Info => cmd_info(),
-        Commands::Init {
-            format,
-            output,
-            force,
-        } => cmd_init(format, output, force),
+        Commands::Init { format, output, force } => cmd_init(format, output, force),
     }
 }
 
@@ -532,10 +518,14 @@ fn cmd_pack(
 
         if verbose {
             let branch_info = remote.branch.as_deref().unwrap_or("default");
-            eprintln!("  Cloning {} from {:?} (branch: {})...", remote.name, remote.provider, branch_info);
+            eprintln!(
+                "  Cloning {} from {:?} (branch: {})...",
+                remote.name, remote.provider, branch_info
+            );
         }
 
-        let cloned_path = remote.clone(None)
+        let cloned_path = remote
+            .clone(None)
             .map_err(|e| anyhow::anyhow!("Failed to clone repository: {}", e))?;
 
         // Keep temp dir alive by returning it
@@ -552,16 +542,18 @@ fn cmd_pack(
         respect_gitignore,
         read_contents: true,
         max_file_size: 50 * 1024 * 1024, // 50MB
-        skip_symbols: !enable_symbols,  // Skip by default unless --symbols or --full
+        skip_symbols: !enable_symbols,   // Skip by default unless --symbols or --full
         ..Default::default()
     };
 
-    let mut repo = scanner::scan_repository(&repo_path, config)
-        .context("Failed to scan repository")?;
+    let mut repo =
+        scanner::scan_repository(&repo_path, config).context("Failed to scan repository")?;
 
     // Apply default ignores (test files, docs, node_modules, etc.)
     if use_default_ignores {
-        use infiniloom_engine::default_ignores::{DEFAULT_IGNORES, TEST_IGNORES, DOC_IGNORES, matches_any};
+        use infiniloom_engine::default_ignores::{
+            matches_any, DEFAULT_IGNORES, DOC_IGNORES, TEST_IGNORES,
+        };
 
         let before_count = repo.files.len();
         repo.files.retain(|f| {
@@ -582,14 +574,22 @@ fn cmd_pack(
 
         if verbose && repo.files.len() < before_count {
             if let Some(pb) = &pb {
-                pb.set_message(format!("Filtered {} -> {} files (default ignores)", before_count, repo.files.len()));
+                pb.set_message(format!(
+                    "Filtered {} -> {} files (default ignores)",
+                    before_count,
+                    repo.files.len()
+                ));
             }
         }
     }
 
     // Filter to stdin paths if provided
     if let Some(ref paths) = stdin_paths {
-        repo.files.retain(|f| paths.iter().any(|p| f.relative_path == *p || f.relative_path.ends_with(p)));
+        repo.files.retain(|f| {
+            paths
+                .iter()
+                .any(|p| f.relative_path == *p || f.relative_path.ends_with(p))
+        });
         if verbose {
             if let Some(pb) = &pb {
                 pb.set_message(format!("Filtered to {} files from stdin", repo.files.len()));
@@ -604,10 +604,14 @@ fn cmd_pack(
             .filter_map(|p| glob::Pattern::new(p).ok())
             .collect();
         if !patterns.is_empty() {
-            repo.files.retain(|f| patterns.iter().any(|p| p.matches(&f.relative_path)));
+            repo.files
+                .retain(|f| patterns.iter().any(|p| p.matches(&f.relative_path)));
             if verbose {
                 if let Some(pb) = &pb {
-                    pb.set_message(format!("Included {} files matching patterns", repo.files.len()));
+                    pb.set_message(format!(
+                        "Included {} files matching patterns",
+                        repo.files.len()
+                    ));
                 }
             }
         }
@@ -625,7 +629,8 @@ fn cmd_pack(
             .filter_map(|p| glob::Pattern::new(p).ok())
             .collect();
         if !patterns.is_empty() {
-            repo.files.retain(|f| !patterns.iter().any(|p| p.matches(&f.relative_path)));
+            repo.files
+                .retain(|f| !patterns.iter().any(|p| p.matches(&f.relative_path)));
             if verbose {
                 if let Some(pb) = &pb {
                     pb.set_message(format!("After exclusions: {} files", repo.files.len()));
@@ -652,10 +657,13 @@ fn cmd_pack(
     if sort_by_changes {
         if let Ok(git_repo) = GitRepo::open(&path) {
             // Calculate change frequency for each file (commits in last 90 days)
-            let mut file_changes: Vec<(String, u32)> = repo.files
+            let mut file_changes: Vec<(String, u32)> = repo
+                .files
                 .iter()
                 .map(|f| {
-                    let freq = git_repo.file_change_frequency(&f.relative_path, 90).unwrap_or(0);
+                    let freq = git_repo
+                        .file_change_frequency(&f.relative_path, 90)
+                        .unwrap_or(0);
                     (f.relative_path.clone(), freq)
                 })
                 .collect();
@@ -670,7 +678,12 @@ fn cmd_pack(
                 .map(|(i, (path, _))| (path.clone(), i))
                 .collect();
 
-            repo.files.sort_by_key(|f| order_map.get(&f.relative_path).copied().unwrap_or(usize::MAX));
+            repo.files.sort_by_key(|f| {
+                order_map
+                    .get(&f.relative_path)
+                    .copied()
+                    .unwrap_or(usize::MAX)
+            });
 
             if verbose {
                 if let Some(pb) = &pb {
@@ -688,8 +701,19 @@ fn cmd_pack(
     }
 
     // Apply content transformations based on compression level and flags
-    let should_remove_comments = remove_comments || matches!(compression, CompressionLevel::Balanced | CompressionLevel::Aggressive | CompressionLevel::Extreme);
-    let should_remove_empty = remove_empty_lines || matches!(compression, CompressionLevel::Minimal | CompressionLevel::Balanced | CompressionLevel::Aggressive | CompressionLevel::Extreme);
+    let should_remove_comments = remove_comments
+        || matches!(
+            compression,
+            CompressionLevel::Balanced | CompressionLevel::Aggressive | CompressionLevel::Extreme
+        );
+    let should_remove_empty = remove_empty_lines
+        || matches!(
+            compression,
+            CompressionLevel::Minimal
+                | CompressionLevel::Balanced
+                | CompressionLevel::Aggressive
+                | CompressionLevel::Extreme
+        );
 
     for file in &mut repo.files {
         if let Some(ref mut content) = file.content {
@@ -731,40 +755,43 @@ fn cmd_pack(
     // Populate git history in Repository struct (for structured output in formatters)
     if include_logs || include_diffs {
         if let Ok(git_repo) = GitRepo::open(&repo_path) {
-            use infiniloom_engine::types::{GitHistory, GitCommitInfo, GitChangedFile};
+            use infiniloom_engine::types::{GitChangedFile, GitCommitInfo, GitHistory};
 
             let mut git_history = GitHistory::default();
 
             // Get recent commits if requested
             if include_logs {
                 if let Ok(commits) = git_repo.log(logs_count) {
-                    git_history.commits = commits.iter().map(|c| GitCommitInfo {
-                        hash: c.hash.clone(),
-                        short_hash: c.short_hash.clone(),
-                        author: c.author.clone(),
-                        date: c.date.clone(),
-                        message: c.message.clone(),
-                    }).collect();
+                    git_history.commits = commits
+                        .iter()
+                        .map(|c| GitCommitInfo {
+                            hash: c.hash.clone(),
+                            short_hash: c.short_hash.clone(),
+                            author: c.author.clone(),
+                            date: c.date.clone(),
+                            message: c.message.clone(),
+                        })
+                        .collect();
                 }
             }
 
             // Get uncommitted changes if requested
             if include_diffs {
                 if let Ok(changed_files) = git_repo.status() {
-                    git_history.changed_files = changed_files.iter().map(|f| {
-                        let status = match f.status {
-                            infiniloom_engine::git::FileStatus::Added => "A",
-                            infiniloom_engine::git::FileStatus::Modified => "M",
-                            infiniloom_engine::git::FileStatus::Deleted => "D",
-                            infiniloom_engine::git::FileStatus::Renamed => "R",
-                            infiniloom_engine::git::FileStatus::Copied => "C",
-                            infiniloom_engine::git::FileStatus::Unknown => "?",
-                        };
-                        GitChangedFile {
-                            path: f.path.clone(),
-                            status: status.to_owned(),
-                        }
-                    }).collect();
+                    git_history.changed_files = changed_files
+                        .iter()
+                        .map(|f| {
+                            let status = match f.status {
+                                infiniloom_engine::git::FileStatus::Added => "A",
+                                infiniloom_engine::git::FileStatus::Modified => "M",
+                                infiniloom_engine::git::FileStatus::Deleted => "D",
+                                infiniloom_engine::git::FileStatus::Renamed => "R",
+                                infiniloom_engine::git::FileStatus::Copied => "C",
+                                infiniloom_engine::git::FileStatus::Unknown => "?",
+                            };
+                            GitChangedFile { path: f.path.clone(), status: status.to_owned() }
+                        })
+                        .collect();
                 }
             }
 
@@ -773,9 +800,19 @@ fn cmd_pack(
 
             if verbose {
                 if let Some(pb) = &pb {
-                    pb.set_message(format!("Loaded {} commits, {} changes",
-                        repo.metadata.git_history.as_ref().map(|h| h.commits.len()).unwrap_or(0),
-                        repo.metadata.git_history.as_ref().map(|h| h.changed_files.len()).unwrap_or(0)));
+                    pb.set_message(format!(
+                        "Loaded {} commits, {} changes",
+                        repo.metadata
+                            .git_history
+                            .as_ref()
+                            .map(|h| h.commits.len())
+                            .unwrap_or(0),
+                        repo.metadata
+                            .git_history
+                            .as_ref()
+                            .map(|h| h.changed_files.len())
+                            .unwrap_or(0)
+                    ));
                 }
             }
         } else if verbose {
@@ -796,7 +833,8 @@ fn cmd_pack(
     }
 
     // Format output with options
-    let formatter = OutputFormatter::by_format_with_all_options(format, show_line_numbers, show_file_summary);
+    let formatter =
+        OutputFormatter::by_format_with_all_options(format, show_line_numbers, show_file_summary);
     let mut output_text = formatter.format(&repo, &map);
 
     // Prepend custom header if specified
@@ -806,9 +844,11 @@ fn cmd_pack(
 
     // Include custom instructions from file
     if let Some(instr_path) = instruction_file {
-        let instructions = std::fs::read_to_string(&instr_path)
-            .with_context(|| format!("Failed to read instruction file: {}", instr_path.display()))?;
-        output_text = format!("{}\n\n<!-- Custom Instructions -->\n{}\n\n", output_text, instructions);
+        let instructions = std::fs::read_to_string(&instr_path).with_context(|| {
+            format!("Failed to read instruction file: {}", instr_path.display())
+        })?;
+        output_text =
+            format!("{}\n\n<!-- Custom Instructions -->\n{}\n\n", output_text, instructions);
     }
 
     // Add token tree if requested
@@ -825,11 +865,15 @@ fn cmd_pack(
     if let Some(ref issues) = security_issues {
         if !issues.is_empty() {
             let mut sec_output = String::from("\n\n<!-- Security Scan Results -->\n");
-            sec_output.push_str(&format!("⚠️ Found {} potential security issues:\n\n", issues.len()));
+            sec_output
+                .push_str(&format!("⚠️ Found {} potential security issues:\n\n", issues.len()));
             for issue in issues {
                 sec_output.push_str(&format!(
                     "- [{:?}] {} in {} (line {})\n",
-                    issue.severity, issue.kind.name(), issue.file, issue.line
+                    issue.severity,
+                    issue.kind.name(),
+                    issue.file,
+                    issue.line
                 ));
             }
             output_text.push_str(&sec_output);
@@ -847,8 +891,12 @@ fn cmd_pack(
         let current_tokens = estimate_tokens(&output_text, model);
         if current_tokens > max_tokens as usize {
             if verbose {
-                eprintln!("{} Output exceeds token limit ({} > {}), truncating...",
-                    "⚠".yellow(), current_tokens, max_tokens);
+                eprintln!(
+                    "{} Output exceeds token limit ({} > {}), truncating...",
+                    "⚠".yellow(),
+                    current_tokens,
+                    max_tokens
+                );
             }
             output_text = truncate_to_tokens(&output_text, max_tokens as usize, model);
         }
@@ -872,18 +920,22 @@ fn cmd_pack(
         }
         #[cfg(not(feature = "clipboard"))]
         {
-            eprintln!("{} Clipboard support not enabled. Build with --features clipboard", "⚠".yellow());
+            eprintln!(
+                "{} Clipboard support not enabled. Build with --features clipboard",
+                "⚠".yellow()
+            );
         }
     }
 
     // Write output
     if let Some(ref output_path) = output {
-        std::fs::write(output_path, &output_text)
-            .context("Failed to write output file")?;
+        std::fs::write(output_path, &output_text).context("Failed to write output file")?;
 
         if verbose {
             let elapsed = start.elapsed();
-            let total_lines: usize = repo.files.iter()
+            let total_lines: usize = repo
+                .files
+                .iter()
                 .filter_map(|f| f.content.as_ref())
                 .map(|c| c.lines().count())
                 .sum();
@@ -895,7 +947,12 @@ fn cmd_pack(
             eprintln!("  {} {} files", "📁".dimmed(), repo.files.len());
             eprintln!("  {} {} lines", "📄".dimmed(), total_lines);
             eprintln!("  {} {}", "📦".dimmed(), format_size(output_text.len() as u64, BINARY));
-            eprintln!("  {} ~{} tokens ({})", "🔢".dimmed(), repo.total_tokens(model), model.name());
+            eprintln!(
+                "  {} ~{} tokens ({})",
+                "🔢".dimmed(),
+                repo.total_tokens(model),
+                model.name()
+            );
             eprintln!("  {} {:?}", "⏱️ ".dimmed(), elapsed);
 
             // Show language breakdown if available
@@ -903,8 +960,13 @@ fn cmd_pack(
                 eprintln!();
                 eprintln!("  {}:", "Languages".cyan());
                 for lang in repo.metadata.languages.iter().take(5) {
-                    eprintln!("    {} {}: {} files ({:.1}%)",
-                        "•".dimmed(), lang.language, lang.files, lang.percentage);
+                    eprintln!(
+                        "    {} {}: {} files ({:.1}%)",
+                        "•".dimmed(),
+                        lang.language,
+                        lang.files,
+                        lang.percentage
+                    );
                 }
             }
             eprintln!();
@@ -924,7 +986,7 @@ fn cmd_pack(
         eprintln!();
         eprintln!("{} Watching for file changes... (Ctrl+C to stop)", "👀".cyan());
 
-        use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event};
+        use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
         use std::sync::mpsc::channel;
         use std::time::Duration;
 
@@ -939,9 +1001,11 @@ fn cmd_pack(
                 }
             },
             Config::default().with_poll_interval(Duration::from_secs(1)),
-        ).context("Failed to create file watcher")?;
+        )
+        .context("Failed to create file watcher")?;
 
-        watcher.watch(&repo_path, RecursiveMode::Recursive)
+        watcher
+            .watch(&repo_path, RecursiveMode::Recursive)
             .context("Failed to watch directory")?;
 
         // Debounce: wait for changes to settle
@@ -981,13 +1045,15 @@ fn cmd_pack(
                         }
 
                         let new_map = RepoMapGenerator::new(2000).generate(&new_repo);
-                        let new_formatter = OutputFormatter::by_format_with_options(format, show_line_numbers);
+                        let new_formatter =
+                            OutputFormatter::by_format_with_options(format, show_line_numbers);
                         let new_output = new_formatter.format(&new_repo, &new_map);
 
                         if let Err(e) = std::fs::write(&output_path, &new_output) {
                             eprintln!("{} Failed to write output: {}", "Error:".red(), e);
                         } else {
-                            eprintln!("{} Regenerated in {:?} ({} files, ~{} tokens)",
+                            eprintln!(
+                                "{} Regenerated in {:?} ({} files, ~{} tokens)",
                                 "✓".green(),
                                 rebuild_start.elapsed(),
                                 new_repo.files.len(),
@@ -997,13 +1063,13 @@ fn cmd_pack(
                     }
 
                     last_rebuild = Instant::now();
-                }
+                },
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     // Just keep watching
-                }
+                },
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
                     break;
-                }
+                },
             }
         }
     }
@@ -1029,8 +1095,7 @@ fn cmd_scan(
         ..Default::default()
     };
 
-    let repo = scanner::scan_repository(&path, config)
-        .context("Failed to scan repository")?;
+    let repo = scanner::scan_repository(&path, config).context("Failed to scan repository")?;
 
     let elapsed = start.elapsed();
 
@@ -1070,10 +1135,7 @@ fn cmd_scan(
         if !repo.metadata.languages.is_empty() {
             println!("  {}:", "Languages".cyan());
             for lang in &repo.metadata.languages {
-                println!(
-                    "    {}: {} files ({:.1}%)",
-                    lang.language, lang.files, lang.percentage
-                );
+                println!("    {}: {} files ({:.1}%)", lang.language, lang.files, lang.percentage);
             }
             println!();
         }
@@ -1119,8 +1181,7 @@ fn cmd_map(path: PathBuf, budget: u32, output: Option<PathBuf>) -> Result<()> {
         ..Default::default()
     };
 
-    let mut repo = scanner::scan_repository(&path, config)
-        .context("Failed to scan repository")?;
+    let mut repo = scanner::scan_repository(&path, config).context("Failed to scan repository")?;
 
     // Rank files by importance
     infiniloom_engine::rank_files(&mut repo);
@@ -1131,8 +1192,7 @@ fn cmd_map(path: PathBuf, budget: u32, output: Option<PathBuf>) -> Result<()> {
     let output_text = map.summary.clone();
 
     if let Some(output_path) = output {
-        std::fs::write(&output_path, &output_text)
-            .context("Failed to write output file")?;
+        std::fs::write(&output_path, &output_text).context("Failed to write output file")?;
         eprintln!("Repository map written to: {}", output_path.display());
     } else {
         println!("{}", output_text);
@@ -1214,9 +1274,8 @@ fn cmd_init(format: ConfigFormat, output: Option<PathBuf>, force: bool) -> Resul
 /// This helps reduce token count when files contain embedded binary data
 fn truncate_base64_content(content: &str) -> String {
     // Common base64 patterns (data URIs, embedded content)
-    let base64_pattern = regex::Regex::new(
-        r"(?:data:[^;]+;base64,|[A-Za-z0-9+/]{100,}={0,2})"
-    ).ok();
+    let base64_pattern =
+        regex::Regex::new(r"(?:data:[^;]+;base64,|[A-Za-z0-9+/]{100,}={0,2})").ok();
 
     if let Some(re) = base64_pattern {
         re.replace_all(content, |caps: &regex::Captures<'_>| {
@@ -1235,7 +1294,8 @@ fn truncate_base64_content(content: &str) -> String {
             } else {
                 matched.to_owned()
             }
-        }).to_string()
+        })
+        .to_string()
     } else {
         // Fallback: simple pattern matching without regex
         let mut result = String::new();
@@ -1243,8 +1303,10 @@ fn truncate_base64_content(content: &str) -> String {
 
         for line in content.lines() {
             // Check if line looks like base64 (only valid chars, long)
-            let is_base64_line = line.len() > 76 &&
-                line.chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=');
+            let is_base64_line = line.len() > 76
+                && line
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=');
 
             if is_base64_line {
                 if !in_base64 {
@@ -1275,7 +1337,8 @@ fn remove_empty_lines_from_content(content: &str) -> String {
 fn remove_comments_from_content(content: &str, language: &str) -> String {
     let (line_comment, block_start, block_end) = match language.to_lowercase().as_str() {
         "python" | "ruby" | "shell" | "bash" | "sh" | "yaml" | "yml" => ("#", "", ""),
-        "javascript" | "typescript" | "java" | "c" | "cpp" | "c++" | "rust" | "go" | "swift" | "kotlin" | "scala" => ("//", "/*", "*/"),
+        "javascript" | "typescript" | "java" | "c" | "cpp" | "c++" | "rust" | "go" | "swift"
+        | "kotlin" | "scala" => ("//", "/*", "*/"),
         "html" | "xml" => ("", "<!--", "-->"),
         "css" | "scss" | "sass" => ("", "/*", "*/"),
         "sql" => ("--", "/*", "*/"),
@@ -1410,12 +1473,33 @@ fn rank_files_fast(repo: &mut infiniloom_engine::Repository) {
 
         // === CRITICAL: Entry points (highest priority) ===
         let entry_point_patterns = [
-            "main.rs", "main.go", "main.py", "main.ts", "main.js", "main.c", "main.cpp",
-            "index.ts", "index.js", "index.tsx", "index.jsx", "index.py",
-            "app.py", "app.ts", "app.js", "app.tsx", "app.jsx", "app.go",
-            "server.py", "server.ts", "server.js", "server.go",
-            "mod.rs", "lib.rs", "lib.py",
-            "__main__.py", "__init__.py",
+            "main.rs",
+            "main.go",
+            "main.py",
+            "main.ts",
+            "main.js",
+            "main.c",
+            "main.cpp",
+            "index.ts",
+            "index.js",
+            "index.tsx",
+            "index.jsx",
+            "index.py",
+            "app.py",
+            "app.ts",
+            "app.js",
+            "app.tsx",
+            "app.jsx",
+            "app.go",
+            "server.py",
+            "server.ts",
+            "server.js",
+            "server.go",
+            "mod.rs",
+            "lib.rs",
+            "lib.py",
+            "__main__.py",
+            "__init__.py",
         ];
         if entry_point_patterns.iter().any(|p| path.ends_with(p)) {
             score -= 5000;
@@ -1423,10 +1507,24 @@ fn rank_files_fast(repo: &mut infiniloom_engine::Repository) {
 
         // === HIGH: Config and manifest files ===
         let config_patterns = [
-            "Cargo.toml", "package.json", "pyproject.toml", "go.mod", "pom.xml",
-            "build.gradle", "Gemfile", "requirements.txt", "setup.py", "setup.cfg",
-            "tsconfig.json", "webpack.config", "vite.config", "next.config",
-            "Makefile", "CMakeLists.txt", "Dockerfile", "docker-compose",
+            "Cargo.toml",
+            "package.json",
+            "pyproject.toml",
+            "go.mod",
+            "pom.xml",
+            "build.gradle",
+            "Gemfile",
+            "requirements.txt",
+            "setup.py",
+            "setup.cfg",
+            "tsconfig.json",
+            "webpack.config",
+            "vite.config",
+            "next.config",
+            "Makefile",
+            "CMakeLists.txt",
+            "Dockerfile",
+            "docker-compose",
             ".env.example",
         ];
         if config_patterns.iter().any(|p| path.contains(p)) {
@@ -1439,7 +1537,8 @@ fn rank_files_fast(repo: &mut infiniloom_engine::Repository) {
         }
 
         // === MEDIUM: API/Routes/Models ===
-        let important_patterns = ["api/", "routes/", "models/", "controllers/", "services/", "handlers/"];
+        let important_patterns =
+            ["api/", "routes/", "models/", "controllers/", "services/", "handlers/"];
         if important_patterns.iter().any(|p| path.contains(p)) {
             score -= 500;
         }
@@ -1451,7 +1550,8 @@ fn rank_files_fast(repo: &mut infiniloom_engine::Repository) {
         }
 
         // === LOWER: Examples, benchmarks, scripts ===
-        let auxiliary_patterns = ["examples/", "example/", "benchmarks/", "bench/", "scripts/", "tools/"];
+        let auxiliary_patterns =
+            ["examples/", "example/", "benchmarks/", "bench/", "scripts/", "tools/"];
         if auxiliary_patterns.iter().any(|p| path.contains(p)) {
             score += 1500;
         }
@@ -1505,7 +1605,8 @@ fn load_config_file(config_path: Option<&PathBuf>, repo_path: &std::path::Path) 
     }
 
     // Look for default config files
-    let config_files = [".infiniloom.yaml", ".infiniloom.yml", ".infiniloom.toml", ".infiniloom.json"];
+    let config_files =
+        [".infiniloom.yaml", ".infiniloom.yml", ".infiniloom.toml", ".infiniloom.json"];
     for name in config_files {
         let path = repo_path.join(name);
         if path.exists() {
@@ -1549,7 +1650,7 @@ fn parse_config_content(content: &str, path: &std::path::Path, config: &mut Load
                     }
                 }
             }
-        }
+        },
         "toml" => {
             // Simple TOML parsing
             let mut in_ignore_section = false;
@@ -1566,7 +1667,7 @@ fn parse_config_content(content: &str, path: &std::path::Path, config: &mut Load
                     }
                 }
             }
-        }
+        },
         "json" => {
             // Simple JSON parsing for ignore array
             if let Ok(value) = serde_json::from_str::<serde_json::Value>(content) {
@@ -1580,7 +1681,7 @@ fn parse_config_content(content: &str, path: &std::path::Path, config: &mut Load
                     }
                 }
             }
-        }
-        _ => {}
+        },
+        _ => {},
     }
 }

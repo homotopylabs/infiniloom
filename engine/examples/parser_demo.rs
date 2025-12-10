@@ -89,7 +89,7 @@ class DataProcessor:
                 }
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }
@@ -151,7 +151,7 @@ pub enum Status {
                 }
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }
@@ -210,7 +210,7 @@ export { add, Counter, multiply };
                 }
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }
@@ -267,7 +267,7 @@ function validateEmail(email: string): boolean {
                 );
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }
@@ -318,7 +318,7 @@ func (u *User) Greet() string {
                 );
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }
@@ -387,7 +387,7 @@ enum MathOperation {
                 }
                 println!();
             }
-        }
+        },
         Err(e) => println!("Error: {}", e),
     }
 }

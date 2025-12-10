@@ -91,12 +91,7 @@ pub struct Chunker {
 impl Chunker {
     /// Create a new chunker
     pub fn new(strategy: ChunkStrategy, max_tokens: u32) -> Self {
-        Self {
-            strategy,
-            max_tokens,
-            overlap_tokens: 200,
-            model: TokenizerModel::Claude,
-        }
+        Self { strategy, max_tokens, overlap_tokens: 200, model: TokenizerModel::Claude }
     }
 
     /// Set overlap tokens
@@ -173,7 +168,8 @@ impl Chunker {
                 .relative_path
                 .split('/')
                 .next()
-                .unwrap_or("root").to_owned();
+                .unwrap_or("root")
+                .to_owned();
 
             modules.entry(module).or_default().push(file.clone());
         }
@@ -313,8 +309,7 @@ impl Chunker {
 
             // Add previous summary
             if i > 0 {
-                chunk.context.previous_summary =
-                    Some(format!("Previous: {}", focus_strs[i - 1]));
+                chunk.context.previous_summary = Some(format!("Previous: {}", focus_strs[i - 1]));
             }
 
             // Add next preview
@@ -365,7 +360,9 @@ mod tests {
         let chunks = chunker.chunk(&repo);
 
         assert!(!chunks.is_empty());
-        assert!(chunks.iter().all(|c| c.tokens <= 1000 || c.files.len() == 1));
+        assert!(chunks
+            .iter()
+            .all(|c| c.tokens <= 1000 || c.files.len() == 1));
     }
 
     #[test]

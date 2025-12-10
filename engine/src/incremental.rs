@@ -2,11 +2,11 @@
 //!
 //! Provides efficient re-scanning by caching results and only processing changed files.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use serde::{Deserialize, Serialize};
 
 use crate::tokenizer::TokenCounts;
 use crate::types::Symbol;
@@ -97,8 +97,7 @@ impl RepoCache {
 
     /// Load cache from file
     pub fn load(cache_path: &Path) -> Result<Self, CacheError> {
-        let content = fs::read(cache_path)
-            .map_err(|e| CacheError::IoError(e.to_string()))?;
+        let content = fs::read(cache_path).map_err(|e| CacheError::IoError(e.to_string()))?;
 
         let cache: Self = bincode::deserialize(&content)
             .map_err(|e| CacheError::DeserializeError(e.to_string()))?;
@@ -118,15 +117,13 @@ impl RepoCache {
     pub fn save(&self, cache_path: &Path) -> Result<(), CacheError> {
         // Ensure parent directory exists
         if let Some(parent) = cache_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| CacheError::IoError(e.to_string()))?;
+            fs::create_dir_all(parent).map_err(|e| CacheError::IoError(e.to_string()))?;
         }
 
-        let content = bincode::serialize(self)
-            .map_err(|e| CacheError::SerializeError(e.to_string()))?;
+        let content =
+            bincode::serialize(self).map_err(|e| CacheError::SerializeError(e.to_string()))?;
 
-        fs::write(cache_path, content)
-            .map_err(|e| CacheError::IoError(e.to_string()))?;
+        fs::write(cache_path, content).map_err(|e| CacheError::IoError(e.to_string()))?;
 
         Ok(())
     }
@@ -161,7 +158,8 @@ impl RepoCache {
     /// Get files that no longer exist
     pub fn find_deleted_files(&self, current_files: &[&str]) -> Vec<String> {
         let current_set: std::collections::HashSet<&str> = current_files.iter().copied().collect();
-        self.files.keys()
+        self.files
+            .keys()
             .filter(|p| !current_set.contains(p.as_str()))
             .cloned()
             .collect()
@@ -169,9 +167,7 @@ impl RepoCache {
 
     /// Recalculate total tokens
     pub fn recalculate_totals(&mut self) {
-        self.total_tokens = self.files.values()
-            .map(|f| f.tokens)
-            .sum();
+        self.total_tokens = self.files.values().map(|f| f.tokens).sum();
     }
 
     /// Get cache statistics
@@ -213,8 +209,9 @@ impl std::fmt::Display for CacheError {
             Self::IoError(e) => write!(f, "I/O error: {}", e),
             Self::SerializeError(e) => write!(f, "Serialization error: {}", e),
             Self::DeserializeError(e) => write!(f, "Deserialization error: {}", e),
-            Self::VersionMismatch { expected, found } =>
-                write!(f, "Cache version mismatch: expected {}, found {}", expected, found),
+            Self::VersionMismatch { expected, found } => {
+                write!(f, "Cache version mismatch: expected {}, found {}", expected, found)
+            },
         }
     }
 }
@@ -236,11 +233,7 @@ impl IncrementalScanner {
         let cache = RepoCache::load(&cache_path)
             .unwrap_or_else(|_| RepoCache::new(&repo_path.to_string_lossy()));
 
-        Self {
-            cache,
-            cache_path,
-            dirty: false,
-        }
+        Self { cache, cache_path, dirty: false }
     }
 
     /// Create with custom cache path
@@ -248,11 +241,7 @@ impl IncrementalScanner {
         let cache = RepoCache::load(&cache_path)
             .unwrap_or_else(|_| RepoCache::new(&repo_path.to_string_lossy()));
 
-        Self {
-            cache,
-            cache_path,
-            dirty: false,
-        }
+        Self { cache, cache_path, dirty: false }
     }
 
     /// Check if a file needs to be rescanned
@@ -262,14 +251,16 @@ impl IncrementalScanner {
             Err(_) => return true,
         };
 
-        let mtime = metadata.modified()
+        let mtime = metadata
+            .modified()
             .ok()
             .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
         let relative_path = path.to_string_lossy();
-        self.cache.needs_rescan(&relative_path, mtime, metadata.len())
+        self.cache
+            .needs_rescan(&relative_path, mtime, metadata.len())
     }
 
     /// Get cached file if available and up-to-date
@@ -319,8 +310,12 @@ impl IncrementalScanner {
     }
 
     /// Get list of changed files compared to current state
-    pub fn get_changed_files<'a>(&self, current_files: &'a [(PathBuf, u64, u64)]) -> Vec<&'a PathBuf> {
-        current_files.iter()
+    pub fn get_changed_files<'a>(
+        &self,
+        current_files: &'a [(PathBuf, u64, u64)],
+    ) -> Vec<&'a PathBuf> {
+        current_files
+            .iter()
             .filter(|(path, mtime, size)| {
                 let relative = path.to_string_lossy();
                 self.cache.needs_rescan(&relative, *mtime, *size)
@@ -343,7 +338,7 @@ pub enum FileChange {
 #[cfg(feature = "watch")]
 pub mod watcher {
     use super::*;
-    use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind};
+    use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
     use std::sync::mpsc::{channel, Receiver};
 
     /// File system watcher for incremental updates
@@ -365,11 +360,7 @@ pub mod watcher {
                 Config::default(),
             )?;
 
-            let mut fw = Self {
-                watcher,
-                receiver: rx,
-                root_path: path.to_path_buf(),
-            };
+            let mut fw = Self { watcher, receiver: rx, root_path: path.to_path_buf() };
 
             fw.watcher.watch(path, RecursiveMode::Recursive)?;
 
@@ -413,8 +404,8 @@ pub mod watcher {
 
 /// Compute a simple hash for change detection
 pub fn hash_content(content: &[u8]) -> u64 {
-    use std::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
 
     let mut hasher = DefaultHasher::new();
     content.hash(&mut hasher);
@@ -447,16 +438,19 @@ mod tests {
         let cache_path = temp.path().join("test.cache");
 
         let mut cache = RepoCache::new("/test/repo");
-        cache.files.insert("test.py".to_string(), CachedFile {
-            path: "test.py".to_string(),
-            mtime: 12345,
-            size: 100,
-            hash: 0,
-            tokens: TokenCounts { claude: 50, gpt4o: 45, gpt4: 48, gemini: 46, llama: 50 },
-            symbols: vec![],
-            language: Some("python".to_string()),
-            lines: 10,
-        });
+        cache.files.insert(
+            "test.py".to_string(),
+            CachedFile {
+                path: "test.py".to_string(),
+                mtime: 12345,
+                size: 100,
+                hash: 0,
+                tokens: TokenCounts { claude: 50, gpt4o: 45, gpt4: 48, gemini: 46, llama: 50 },
+                symbols: vec![],
+                language: Some("python".to_string()),
+                lines: 10,
+            },
+        );
 
         cache.save(&cache_path).unwrap();
 
@@ -471,16 +465,19 @@ mod tests {
         assert!(cache.needs_rescan("new_file.py", 0, 0));
 
         let mut cache = RepoCache::new("/test");
-        cache.files.insert("existing.py".to_string(), CachedFile {
-            path: "existing.py".to_string(),
-            mtime: 1000,
-            size: 500,
-            hash: 0,
-            tokens: TokenCounts::default(),
-            symbols: vec![],
-            language: None,
-            lines: 0,
-        });
+        cache.files.insert(
+            "existing.py".to_string(),
+            CachedFile {
+                path: "existing.py".to_string(),
+                mtime: 1000,
+                size: 500,
+                hash: 0,
+                tokens: TokenCounts::default(),
+                symbols: vec![],
+                language: None,
+                lines: 0,
+            },
+        );
 
         assert!(!cache.needs_rescan("existing.py", 1000, 500));
         assert!(cache.needs_rescan("existing.py", 2000, 500)); // mtime changed

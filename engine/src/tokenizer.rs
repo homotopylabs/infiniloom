@@ -40,7 +40,7 @@ impl TokenModel {
     pub fn chars_per_token(&self) -> f32 {
         match self {
             Self::Claude => 3.5,
-            Self::Gpt4o => 4.0,  // o200k is more efficient
+            Self::Gpt4o => 4.0, // o200k is more efficient
             Self::Gpt4 => 3.7,
             Self::Gemini => 3.8,
             Self::Llama => 3.5,
@@ -60,16 +60,13 @@ static GPT4_TOKENIZER: OnceLock<CoreBPE> = OnceLock::new();
 
 /// Get or initialize the GPT-4o tokenizer (o200k_base)
 fn get_gpt4o_tokenizer() -> &'static CoreBPE {
-    GPT4O_TOKENIZER.get_or_init(|| {
-        o200k_base().expect("Failed to initialize o200k_base tokenizer")
-    })
+    GPT4O_TOKENIZER.get_or_init(|| o200k_base().expect("Failed to initialize o200k_base tokenizer"))
 }
 
 /// Get or initialize the GPT-4 tokenizer (cl100k_base)
 fn get_gpt4_tokenizer() -> &'static CoreBPE {
-    GPT4_TOKENIZER.get_or_init(|| {
-        cl100k_base().expect("Failed to initialize cl100k_base tokenizer")
-    })
+    GPT4_TOKENIZER
+        .get_or_init(|| cl100k_base().expect("Failed to initialize cl100k_base tokenizer"))
 }
 
 /// Accurate token counter with fallback to estimation
@@ -114,11 +111,11 @@ impl Tokenizer {
             TokenModel::Gpt4o => {
                 let tokenizer = get_gpt4o_tokenizer();
                 tokenizer.encode_ordinary(text).len() as u32
-            }
+            },
             TokenModel::Gpt4 => {
                 let tokenizer = get_gpt4_tokenizer();
                 tokenizer.encode_ordinary(text).len() as u32
-            }
+            },
             _ => self.estimate(text, model),
         }
     }
@@ -144,11 +141,42 @@ impl Tokenizer {
         estimate += newline_count * 0.5;
 
         // Adjust for special characters (often separate tokens)
-        let special_chars = text.chars().filter(|c| {
-            matches!(c, '{' | '}' | '(' | ')' | '[' | ']' | ';' | ':' | ',' | '.' |
-                    '=' | '+' | '-' | '*' | '/' | '<' | '>' | '!' | '&' | '|' |
-                    '@' | '#' | '$' | '%' | '^' | '~' | '`' | '"' | '\'')
-        }).count() as f32;
+        let special_chars = text
+            .chars()
+            .filter(|c| {
+                matches!(
+                    c,
+                    '{' | '}'
+                        | '('
+                        | ')'
+                        | '['
+                        | ']'
+                        | ';'
+                        | ':'
+                        | ','
+                        | '.'
+                        | '='
+                        | '+'
+                        | '-'
+                        | '*'
+                        | '/'
+                        | '<'
+                        | '>'
+                        | '!'
+                        | '&'
+                        | '|'
+                        | '@'
+                        | '#'
+                        | '$'
+                        | '%'
+                        | '^'
+                        | '~'
+                        | '`'
+                        | '"'
+                        | '\''
+                )
+            })
+            .count() as f32;
 
         // Code-focused models handle special chars differently
         if matches!(model, TokenModel::CodeLlama | TokenModel::Claude) {
@@ -180,9 +208,7 @@ impl Tokenizer {
             (TokenModel::Llama, counts.llama),
         ];
 
-        models.into_iter()
-            .min_by_key(|(_, count)| *count)
-            .unwrap()
+        models.into_iter().min_by_key(|(_, count)| *count).unwrap()
     }
 
     /// Truncate text to fit within a token budget
@@ -262,8 +288,11 @@ impl TokenCounts {
 
     /// Sum all counts
     pub fn total(&self) -> u64 {
-        self.claude as u64 + self.gpt4o as u64 + self.gpt4 as u64 +
-        self.gemini as u64 + self.llama as u64
+        self.claude as u64
+            + self.gpt4o as u64
+            + self.gpt4 as u64
+            + self.gemini as u64
+            + self.llama as u64
     }
 
     /// Add counts from another TokenCounts

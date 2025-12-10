@@ -24,23 +24,23 @@
 //! ```
 
 // Core modules
-pub mod types;
-pub mod repomap;
-pub mod ranking;
 pub mod chunking;
-pub mod output;
-pub mod security;
-pub mod parser;
 pub mod default_ignores;
+pub mod output;
+pub mod parser;
+pub mod ranking;
+pub mod repomap;
+pub mod security;
+pub mod types;
 
 // New modules
-pub mod tokenizer;
 pub mod config;
 pub mod dependencies;
-pub mod remote;
-pub mod mmap_scanner;
-pub mod incremental;
 pub mod git;
+pub mod incremental;
+pub mod mmap_scanner;
+pub mod remote;
+pub mod tokenizer;
 
 #[cfg(feature = "embeddings")]
 pub mod semantic;
@@ -48,23 +48,25 @@ pub mod semantic;
 pub mod ffi;
 
 // Re-exports from core modules
-pub use types::*;
-pub use ffi::{ZigCore, CompressionConfig, LanguageId, estimate_tokens, is_binary};
-pub use repomap::{RepoMap, RepoMapGenerator};
-pub use ranking::{SymbolRanker, rank_files, sort_files_by_importance};
-pub use chunking::{Chunk, Chunker, ChunkStrategy};
+pub use chunking::{Chunk, ChunkStrategy, Chunker};
+pub use ffi::{estimate_tokens, is_binary, CompressionConfig, LanguageId, ZigCore};
 pub use output::{OutputFormat, OutputFormatter};
+pub use parser::{Language, Parser, ParserError};
+pub use ranking::{rank_files, sort_files_by_importance, SymbolRanker};
+pub use repomap::{RepoMap, RepoMapGenerator};
 pub use security::SecurityScanner;
-pub use parser::{Parser, Language, ParserError};
+pub use types::*;
 
 // Re-exports from new modules
-pub use tokenizer::{Tokenizer, TokenModel, TokenCounts as AccurateTokenCounts};
-pub use config::{Config, ScanConfig, OutputConfig, SymbolConfig, SecurityConfig, PerformanceConfig};
-pub use dependencies::{DependencyGraph, DependencyNode, DependencyEdge, ResolvedImport};
-pub use remote::{RemoteRepo, GitProvider, RemoteError};
-pub use mmap_scanner::{MmapScanner, MappedFile, ScannedFile as MmapScannedFile};
-pub use incremental::{IncrementalScanner, RepoCache, CachedFile, FileChange};
-pub use git::{GitRepo, Commit, ChangedFile, FileStatus, GitError};
+pub use config::{
+    Config, OutputConfig, PerformanceConfig, ScanConfig, SecurityConfig, SymbolConfig,
+};
+pub use dependencies::{DependencyEdge, DependencyGraph, DependencyNode, ResolvedImport};
+pub use git::{ChangedFile, Commit, FileStatus, GitError, GitRepo};
+pub use incremental::{CachedFile, FileChange, IncrementalScanner, RepoCache};
+pub use mmap_scanner::{MappedFile, MmapScanner, ScannedFile as MmapScannedFile};
+pub use remote::{GitProvider, RemoteError, RemoteRepo};
+pub use tokenizer::{TokenCounts as AccurateTokenCounts, TokenModel, Tokenizer};
 
 /// Library version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -10,7 +10,7 @@ use std::io;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::tokenizer::{Tokenizer, TokenCounts, TokenModel};
+use crate::tokenizer::{TokenCounts, TokenModel, Tokenizer};
 
 /// A memory-mapped file for efficient reading
 pub struct MappedFile {
@@ -24,10 +24,7 @@ impl MappedFile {
         let file = File::open(path)?;
         let mmap = unsafe { MmapOptions::new().map(&file)? };
 
-        Ok(Self {
-            mmap,
-            path: path.to_string_lossy().to_string(),
-        })
+        Ok(Self { mmap, path: path.to_string_lossy().to_string() })
     }
 
     /// Get the file contents as a byte slice
@@ -70,7 +67,8 @@ impl MappedFile {
         }
 
         // High ratio of non-printable characters
-        let non_printable = sample.iter()
+        let non_printable = sample
+            .iter()
             .filter(|&&b| b < 32 && b != b'\t' && b != b'\n' && b != b'\r')
             .count();
 
@@ -137,7 +135,7 @@ impl MmapScanner {
     /// Create a new scanner with default settings
     pub fn new() -> Self {
         Self {
-            mmap_threshold: 64 * 1024, // 64KB
+            mmap_threshold: 64 * 1024,       // 64KB
             max_file_size: 50 * 1024 * 1024, // 50MB
             tokenizer: Tokenizer::new(),
             stats: ScanStats::default(),
@@ -163,11 +161,14 @@ impl MmapScanner {
 
         // Skip files over max size
         if size > self.max_file_size {
-            self.stats.files_skipped_size.fetch_add(1, Ordering::Relaxed);
+            self.stats
+                .files_skipped_size
+                .fetch_add(1, Ordering::Relaxed);
             return Ok(None);
         }
 
-        let relative_path = path.strip_prefix(base_path)
+        let relative_path = path
+            .strip_prefix(base_path)
             .unwrap_or(path)
             .to_string_lossy()
             .to_string();
@@ -179,7 +180,9 @@ impl MmapScanner {
 
             // Check for binary
             if mapped.is_binary() {
-                self.stats.files_skipped_binary.fetch_add(1, Ordering::Relaxed);
+                self.stats
+                    .files_skipped_binary
+                    .fetch_add(1, Ordering::Relaxed);
                 return Ok(None);
             }
 
@@ -190,7 +193,9 @@ impl MmapScanner {
 
             // Check for binary
             if is_binary_content(&content) {
-                self.stats.files_skipped_binary.fetch_add(1, Ordering::Relaxed);
+                self.stats
+                    .files_skipped_binary
+                    .fetch_add(1, Ordering::Relaxed);
                 return Ok(None);
             }
 
@@ -201,9 +206,11 @@ impl MmapScanner {
         let content_str = match String::from_utf8(content_bytes) {
             Ok(s) => s,
             Err(_) => {
-                self.stats.files_skipped_binary.fetch_add(1, Ordering::Relaxed);
+                self.stats
+                    .files_skipped_binary
+                    .fetch_add(1, Ordering::Relaxed);
                 return Ok(None);
-            }
+            },
         };
 
         // Count tokens
@@ -231,21 +238,16 @@ impl MmapScanner {
     }
 
     /// Scan multiple files in parallel
-    pub fn scan_files_parallel(
-        &self,
-        paths: &[&Path],
-        base_path: &Path,
-    ) -> Vec<ScannedFile> {
-        paths.par_iter()
-            .filter_map(|path| {
-                match self.scan_file(path, base_path) {
-                    Ok(Some(file)) => Some(file),
-                    Ok(None) => None,
-                    Err(e) => {
-                        log::debug!("Error scanning {:?}: {}", path, e);
-                        None
-                    }
-                }
+    pub fn scan_files_parallel(&self, paths: &[&Path], base_path: &Path) -> Vec<ScannedFile> {
+        paths
+            .par_iter()
+            .filter_map(|path| match self.scan_file(path, base_path) {
+                Ok(Some(file)) => Some(file),
+                Ok(None) => None,
+                Err(e) => {
+                    log::debug!("Error scanning {:?}: {}", path, e);
+                    None
+                },
             })
             .collect()
     }
@@ -281,7 +283,8 @@ fn is_binary_content(content: &[u8]) -> bool {
         return true;
     }
 
-    let non_printable = sample.iter()
+    let non_printable = sample
+        .iter()
         .filter(|&&b| b < 32 && b != b'\t' && b != b'\n' && b != b'\r')
         .count();
 
@@ -336,10 +339,7 @@ pub struct StreamingProcessor {
 impl StreamingProcessor {
     /// Create a new streaming processor
     pub fn new(chunk_size: usize) -> Self {
-        Self {
-            chunk_size,
-            tokenizer: Tokenizer::new(),
-        }
+        Self { chunk_size, tokenizer: Tokenizer::new() }
     }
 
     /// Process a file in chunks, yielding partial results
@@ -353,9 +353,9 @@ impl StreamingProcessor {
             return Ok(());
         }
 
-        let content = mapped.as_str().ok_or_else(||
-            io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8")
-        )?;
+        let content = mapped
+            .as_str()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8"))?;
 
         let mut offset = 0;
         while offset < content.len() {
@@ -363,7 +363,8 @@ impl StreamingProcessor {
 
             // Find line boundary
             let chunk_end = if end < content.len() {
-                content[offset..end].rfind('\n')
+                content[offset..end]
+                    .rfind('\n')
                     .map(|i| offset + i + 1)
                     .unwrap_or(end)
             } else {
@@ -428,7 +429,9 @@ mod tests {
         writeln!(temp, "    print('hello')").unwrap();
 
         let scanner = MmapScanner::new();
-        let result = scanner.scan_file(temp.path(), temp.path().parent().unwrap()).unwrap();
+        let result = scanner
+            .scan_file(temp.path(), temp.path().parent().unwrap())
+            .unwrap();
 
         assert!(result.is_some());
         let file = result.unwrap();
@@ -454,9 +457,11 @@ mod tests {
         let processor = StreamingProcessor::new(256);
         let mut chunks = 0;
 
-        processor.process_file(temp.path(), |_chunk, _offset, _tokens| {
-            chunks += 1;
-        }).unwrap();
+        processor
+            .process_file(temp.path(), |_chunk, _offset, _tokens| {
+                chunks += 1;
+            })
+            .unwrap();
 
         assert!(chunks > 1);
     }

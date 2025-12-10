@@ -1,4 +1,4 @@
-use infiniloom_engine::{ZigCore, estimate_tokens};
+use infiniloom_engine::{estimate_tokens, ZigCore};
 
 fn main() {
     println!("Testing Zig Core Integration");
@@ -30,7 +30,8 @@ fn main() {
 
             // Test token counting with Zig
             println!("\n4. Token counting with Zig core:");
-            let zig_tokens = zig.count_tokens(sample_code, infiniloom_engine::ffi::TokenizerModel::Claude);
+            let zig_tokens =
+                zig.count_tokens(sample_code, infiniloom_engine::ffi::TokenizerModel::Claude);
             println!("   Sample code tokens (Zig): {}", zig_tokens);
 
             // Test all models
@@ -54,17 +55,19 @@ fn main() {
                 Ok(compressed) => {
                     println!("   Original length: {}", sample_code.len());
                     println!("   Compressed length: {}", compressed.len());
-                    println!("   Compression ratio: {:.1}%",
-                        (1.0 - compressed.len() as f64 / sample_code.len() as f64) * 100.0);
-                }
+                    println!(
+                        "   Compression ratio: {:.1}%",
+                        (1.0 - compressed.len() as f64 / sample_code.len() as f64) * 100.0
+                    );
+                },
                 Err(e) => println!("   Compression failed: {}", e),
             }
 
             println!("\n✓ All tests passed!");
-        }
+        },
         None => {
             println!("   WARNING: ZigCore::new() returned None");
             println!("   This is expected if zig-core feature is not enabled");
-        }
+        },
     }
 }

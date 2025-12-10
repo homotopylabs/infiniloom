@@ -91,10 +91,7 @@ impl RepoFile {
 
     /// Get filename without path
     pub fn filename(&self) -> &str {
-        self.path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("")
+        self.path.file_name().and_then(|n| n.to_str()).unwrap_or("")
     }
 }
 

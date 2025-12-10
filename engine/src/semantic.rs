@@ -21,9 +21,7 @@ impl SemanticAnalyzer {
 
     /// Create a semantic analyzer with a custom model path
     pub fn with_model(model_path: &str) -> Self {
-        Self {
-            _model_path: Some(model_path.to_string()),
-        }
+        Self { _model_path: Some(model_path.to_string()) }
     }
 
     /// Generate embeddings for code content

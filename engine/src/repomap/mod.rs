@@ -2,9 +2,9 @@
 
 mod graph;
 
-use crate::types::{Repository, SymbolKind, TokenizerModel};
 #[cfg(test)]
 use crate::types::{RepoFile, Symbol};
+use crate::types::{Repository, SymbolKind, TokenizerModel};
 use graph::SymbolGraph;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -103,11 +103,7 @@ pub struct RepoMapGenerator {
 impl RepoMapGenerator {
     /// Create a new generator with token budget
     pub fn new(token_budget: u32) -> Self {
-        Self {
-            token_budget,
-            max_symbols: 50,
-            model: TokenizerModel::Claude,
-        }
+        Self { token_budget, max_symbols: 50, model: TokenizerModel::Claude }
     }
 
     /// Set maximum symbols to include
@@ -154,13 +150,7 @@ impl RepoMapGenerator {
         // Estimate token count
         let token_count = self.estimate_tokens(&key_symbols, &file_index);
 
-        RepoMap {
-            summary,
-            key_symbols,
-            module_graph,
-            file_index,
-            token_count,
-        }
+        RepoMap { summary, key_symbols, module_graph, file_index, token_count }
     }
 
     /// Build an index of symbols for fast lookup
@@ -168,7 +158,8 @@ impl RepoMapGenerator {
         let mut index = HashMap::new();
         for file in &repo.files {
             // Index by file path (without extension)
-            let path_key = file.relative_path
+            let path_key = file
+                .relative_path
                 .trim_end_matches(".rs")
                 .trim_end_matches(".py")
                 .trim_end_matches(".js")
@@ -178,16 +169,23 @@ impl RepoMapGenerator {
 
             for symbol in &file.symbols {
                 // Index by symbol name
-                index.insert(symbol.name.clone(), format!("{}:{}", file.relative_path, symbol.name));
+                index
+                    .insert(symbol.name.clone(), format!("{}:{}", file.relative_path, symbol.name));
                 // Index by path component
-                index.insert(path_key.to_owned(), format!("{}:{}", file.relative_path, symbol.name));
+                index
+                    .insert(path_key.to_owned(), format!("{}:{}", file.relative_path, symbol.name));
             }
         }
         index
     }
 
     /// Fast reference extraction using pre-built index
-    fn extract_references_fast(&self, graph: &mut SymbolGraph, repo: &Repository, index: &HashMap<String, String>) {
+    fn extract_references_fast(
+        &self,
+        graph: &mut SymbolGraph,
+        repo: &Repository,
+        index: &HashMap<String, String>,
+    ) {
         for file in &repo.files {
             for symbol in &file.symbols {
                 if symbol.kind == SymbolKind::Import {
@@ -299,7 +297,8 @@ impl RepoMapGenerator {
                 .relative_path
                 .split('/')
                 .next()
-                .unwrap_or("root").to_owned();
+                .unwrap_or("root")
+                .to_owned();
 
             let entry = modules.entry(module.clone()).or_insert(ModuleNode {
                 name: module.clone(),

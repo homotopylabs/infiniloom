@@ -3,7 +3,10 @@
 //! Supports `.infiniloomrc`, `.infiniloom.yaml`, `.infiniloom.toml`, and `.infiniloom.json`
 //! with environment variable override support.
 
-use figment::{Figment, providers::{Format, Yaml, Toml, Json, Env, Serialized}};
+use figment::{
+    providers::{Env, Format, Json, Serialized, Toml, Yaml},
+    Figment,
+};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -323,10 +326,7 @@ impl Default for PatternConfig {
                 "Cargo.toml".to_owned(),
                 "pyproject.toml".to_owned(),
             ],
-            ignore_paths: vec![
-                "*.lock".to_owned(),
-                "*.sum".to_owned(),
-            ],
+            ignore_paths: vec!["*.lock".to_owned(), "*.sum".to_owned()],
             modified_since: None,
             by_author: None,
         }
@@ -343,8 +343,7 @@ impl Config {
     /// Load configuration with optional profile override
     #[allow(clippy::result_large_err)]
     pub fn load_with_profile(repo_path: &Path, profile: Option<&str>) -> Result<Self, ConfigError> {
-        let mut figment = Figment::new()
-            .merge(Serialized::defaults(Config::default()));
+        let mut figment = Figment::new().merge(Serialized::defaults(Config::default()));
 
         // Try loading from various config file locations
         let config_files = [
@@ -377,7 +376,7 @@ impl Config {
                         } else {
                             figment
                         }
-                    }
+                    },
                     _ => figment,
                 };
                 break; // Use first found config file

@@ -3,9 +3,9 @@
 //! This module provides comprehensive dependency analysis using actual AST parsing
 //! to build accurate import graphs, call graphs, and symbol reference tracking.
 
-use crate::types::{Repository, RepoFile, SymbolKind};
-use petgraph::graph::{DiGraph, NodeIndex};
+use crate::types::{RepoFile, Repository, SymbolKind};
 use petgraph::algo::tarjan_scc;
+use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -161,7 +161,9 @@ impl DependencyGraph {
         let module_name = Self::path_to_module(&file.relative_path);
 
         // Collect exported symbols
-        let exports: Vec<String> = file.symbols.iter()
+        let exports: Vec<String> = file
+            .symbols
+            .iter()
             .filter(|s| s.kind != SymbolKind::Import)
             .map(|s| s.name.clone())
             .collect();
@@ -171,7 +173,8 @@ impl DependencyGraph {
             let key = format!("{}::{}", module_name, export);
             self.symbol_to_file.insert(key, file.relative_path.clone());
             // Also index by simple name for ambiguous resolution
-            self.symbol_to_file.entry(export.clone())
+            self.symbol_to_file
+                .entry(export.clone())
                 .or_insert_with(|| file.relative_path.clone());
         }
 
@@ -185,7 +188,8 @@ impl DependencyGraph {
 
         let idx = self.graph.add_node(node);
         self.path_to_node.insert(file.relative_path.clone(), idx);
-        self.module_to_path.insert(module_name, file.relative_path.clone());
+        self.module_to_path
+            .insert(module_name, file.relative_path.clone());
     }
 
     /// Extract and resolve imports from a file
@@ -205,10 +209,10 @@ impl DependencyGraph {
 
                 if let Some(target_path) = &resolved.to_path {
                     // Add edge to graph
-                    if let (Some(&from_idx), Some(&to_idx)) =
-                        (self.path_to_node.get(&file.relative_path),
-                         self.path_to_node.get(target_path))
-                    {
+                    if let (Some(&from_idx), Some(&to_idx)) = (
+                        self.path_to_node.get(&file.relative_path),
+                        self.path_to_node.get(target_path),
+                    ) {
                         let edge = DependencyEdge {
                             dep_type: resolved.import_type,
                             symbols: resolved.symbols.clone(),
@@ -235,7 +239,9 @@ impl DependencyGraph {
     /// Extract imports by scanning file content with regex
     /// Catches CommonJS require(), dynamic imports, and any missed ESM imports
     fn extract_imports_from_content(&mut self, content: &str, file: &RepoFile) {
-        let is_js = file.language.as_deref()
+        let is_js = file
+            .language
+            .as_deref()
             .map(|l| matches!(l, "javascript" | "typescript" | "jsx" | "tsx"))
             .unwrap_or(false);
 
@@ -247,7 +253,10 @@ impl DependencyGraph {
         let require_re = regex::Regex::new(r#"require\s*\(\s*['"]([^'"]+)['"]\s*\)"#).ok();
 
         // Match import ... from 'pkg' and import('pkg')
-        let import_re = regex::Regex::new(r#"(?:from|import)\s*\(\s*['"]([^'"]+)['"]\s*\)|from\s+['"]([^'"]+)['"]"#).ok();
+        let import_re = regex::Regex::new(
+            r#"(?:from|import)\s*\(\s*['"]([^'"]+)['"]\s*\)|from\s+['"]([^'"]+)['"]"#,
+        )
+        .ok();
 
         let mut found_packages = HashSet::new();
 
@@ -379,11 +388,7 @@ impl DependencyGraph {
                 } else {
                     DependencyType::Import
                 };
-                imports.push(ParsedImport {
-                    specifier: spec,
-                    symbols,
-                    import_type,
-                });
+                imports.push(ParsedImport { specifier: spec, symbols, import_type });
             }
         }
         // Rust: use x::y
@@ -520,7 +525,8 @@ impl DependencyGraph {
             .unwrap_or_default();
 
         // Possible resolved paths to try
-        let candidates = self.generate_resolution_candidates(specifier, &base_dir, &from_file.language);
+        let candidates =
+            self.generate_resolution_candidates(specifier, &base_dir, &from_file.language);
 
         // Find first existing file
         for candidate in candidates {
@@ -571,11 +577,32 @@ impl DependencyGraph {
 
         // Known external package prefixes
         let external_prefixes = [
-            "react", "vue", "angular", "express", "lodash", "axios",
-            "std", "core", "alloc", "collections", // Rust std
-            "fmt", "os", "io", "net", "http", "sync", "context", // Go std
-            "java.", "javax.", "org.apache", "com.google", // Java
-            "numpy", "pandas", "torch", "tensorflow", "sklearn", // Python
+            "react",
+            "vue",
+            "angular",
+            "express",
+            "lodash",
+            "axios",
+            "std",
+            "core",
+            "alloc",
+            "collections", // Rust std
+            "fmt",
+            "os",
+            "io",
+            "net",
+            "http",
+            "sync",
+            "context", // Go std
+            "java.",
+            "javax.",
+            "org.apache",
+            "com.google", // Java
+            "numpy",
+            "pandas",
+            "torch",
+            "tensorflow",
+            "sklearn", // Python
         ];
 
         for prefix in external_prefixes {
@@ -668,7 +695,8 @@ impl DependencyGraph {
         for scc in sccs {
             if scc.len() > 1 {
                 // This is a cycle
-                let cycle: Vec<String> = scc.iter()
+                let cycle: Vec<String> = scc
+                    .iter()
                     .filter_map(|&idx| self.graph.node_weight(idx))
                     .map(|n| n.path.clone())
                     .collect();
@@ -737,7 +765,8 @@ impl DependencyGraph {
         path.chars()
             .map(|c| if c == '/' || c == '\\' { '.' } else { c })
             .collect::<String>()
-            .trim_matches('.').to_owned()
+            .trim_matches('.')
+            .to_owned()
     }
 
     // Public query methods
@@ -780,7 +809,8 @@ impl DependencyGraph {
 
     /// Get top N most important files by import graph
     pub fn get_most_important(&self, n: usize) -> Vec<(&str, f64)> {
-        let mut nodes: Vec<_> = self.graph
+        let mut nodes: Vec<_> = self
+            .graph
             .node_weights()
             .map(|n| (n.path.as_str(), n.importance))
             .collect();
@@ -797,7 +827,8 @@ impl DependencyGraph {
 
     /// Get unresolved imports (potential issues)
     pub fn get_unresolved_imports(&self) -> Vec<&ResolvedImport> {
-        self.imports.iter()
+        self.imports
+            .iter()
             .filter(|i| i.to_path.is_none() && !i.is_external)
             .collect()
     }
@@ -809,7 +840,11 @@ impl DependencyGraph {
             total_edges: self.graph.edge_count(),
             external_deps: self.external_deps.len(),
             circular_dep_groups: self.circular_deps.len(),
-            unresolved_imports: self.imports.iter().filter(|i| i.to_path.is_none() && !i.is_external).count(),
+            unresolved_imports: self
+                .imports
+                .iter()
+                .filter(|i| i.to_path.is_none() && !i.is_external)
+                .count(),
         }
     }
 }
@@ -844,7 +879,9 @@ fn normalize_path(path: &str) -> String {
     for part in path.split('/') {
         match part {
             "." | "" => continue,
-            ".." => { parts.pop(); }
+            ".." => {
+                parts.pop();
+            },
             _ => parts.push(part),
         }
     }
@@ -856,10 +893,11 @@ fn normalize_path(path: &str) -> String {
 #[allow(clippy::str_to_string)]
 mod tests {
     use super::*;
-    use crate::types::{TokenCounts, Symbol};
+    use crate::types::{Symbol, TokenCounts};
 
     fn create_test_file(path: &str, imports: Vec<&str>) -> RepoFile {
-        let symbols: Vec<Symbol> = imports.iter()
+        let symbols: Vec<Symbol> = imports
+            .iter()
             .map(|i| {
                 let mut s = Symbol::new(*i, SymbolKind::Import);
                 s.start_line = 1;

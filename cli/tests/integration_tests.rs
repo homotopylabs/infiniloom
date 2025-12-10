@@ -239,10 +239,7 @@ fn test_pack_command_xml() {
     let temp = create_test_repo();
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();
-    cmd.arg("pack")
-        .arg(temp.path())
-        .arg("--format")
-        .arg("xml");
+    cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     cmd.assert()
         .success()
@@ -272,10 +269,7 @@ fn test_pack_command_json() {
     let temp = create_test_repo();
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();
-    cmd.arg("pack")
-        .arg(temp.path())
-        .arg("--format")
-        .arg("json");
+    cmd.arg("pack").arg(temp.path()).arg("--format").arg("json");
 
     let output = cmd.assert().success();
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
@@ -336,10 +330,7 @@ fn test_map_with_budget() {
     let temp = create_test_repo();
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();
-    cmd.arg("map")
-        .arg(temp.path())
-        .arg("--budget")
-        .arg("1000");
+    cmd.arg("map").arg(temp.path()).arg("--budget").arg("1000");
 
     cmd.assert().success();
 }
@@ -374,25 +365,14 @@ fn test_gitignore_respected() {
 
     // Create a directory that should be ignored
     fs::create_dir_all(temp.path().join("target")).unwrap();
-    fs::write(
-        temp.path().join("target/debug.rs"),
-        "fn ignored() {}",
-    )
-    .unwrap();
+    fs::write(temp.path().join("target/debug.rs"), "fn ignored() {}").unwrap();
 
     // Create node_modules (should be ignored)
     fs::create_dir_all(temp.path().join("node_modules")).unwrap();
-    fs::write(
-        temp.path().join("node_modules/package.json"),
-        "{}",
-    )
-    .unwrap();
+    fs::write(temp.path().join("node_modules/package.json"), "{}").unwrap();
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();
-    cmd.arg("pack")
-        .arg(temp.path())
-        .arg("--format")
-        .arg("xml");
+    cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     let output = cmd.assert().success();
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
@@ -478,10 +458,7 @@ fn test_binary_file_skipped() {
     fs::write(temp.path().join("source.rs"), "fn main() {}").unwrap();
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();
-    cmd.arg("pack")
-        .arg(temp.path())
-        .arg("--format")
-        .arg("xml");
+    cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     let output = cmd.assert().success();
     let stdout = String::from_utf8(output.get_output().stdout.clone()).unwrap();
@@ -499,10 +476,7 @@ fn test_symlink_handling() {
     #[cfg(unix)]
     {
         use std::os::unix::fs::symlink;
-        let _ = symlink(
-            temp.path().join("src/main.rs"),
-            temp.path().join("main_link.rs"),
-        );
+        let _ = symlink(temp.path().join("src/main.rs"), temp.path().join("main_link.rs"));
     }
 
     let mut cmd = Command::cargo_bin("infiniloom").unwrap();

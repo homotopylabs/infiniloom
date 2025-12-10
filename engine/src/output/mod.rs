@@ -1,15 +1,15 @@
 //! Output formatters for different LLM models
 
-mod xml;
 mod markdown;
 mod toon;
+mod xml;
 
 use crate::repomap::RepoMap;
 use crate::types::Repository;
 
-pub use xml::XmlFormatter;
 pub use markdown::MarkdownFormatter;
 pub use toon::ToonFormatter;
+pub use xml::XmlFormatter;
 
 /// Output format type
 #[derive(Debug, Clone, Copy, Default)]
@@ -89,7 +89,7 @@ impl OutputFormatter {
             ),
             OutputFormat::Markdown => {
                 Box::new(MarkdownFormatter::new().with_line_numbers(line_numbers))
-            }
+            },
             OutputFormat::Json => Box::new(JsonFormatter),
             OutputFormat::Yaml => Box::new(YamlFormatter),
             OutputFormat::Toon => Box::new(
@@ -139,9 +139,7 @@ pub struct PlainFormatter {
 impl PlainFormatter {
     /// Create a new plain formatter
     pub fn new() -> Self {
-        Self {
-            include_line_numbers: true,
-        }
+        Self { include_line_numbers: true }
     }
 
     /// Set line numbers option
@@ -163,10 +161,9 @@ impl Formatter for PlainFormatter {
 
         // Header
         output.push_str(&format!("Repository: {}\n", repo.name));
-        output.push_str(&format!("Files: {} | Lines: {} | Tokens: {}\n",
-            repo.metadata.total_files,
-            repo.metadata.total_lines,
-            repo.metadata.total_tokens.claude
+        output.push_str(&format!(
+            "Files: {} | Lines: {} | Tokens: {}\n",
+            repo.metadata.total_files, repo.metadata.total_lines, repo.metadata.total_tokens.claude
         ));
         output.push_str(&"=".repeat(60));
         output.push('\n');
@@ -329,7 +326,7 @@ impl Formatter for YamlFormatter {
 mod tests {
     use super::*;
     use crate::repomap::RepoMapGenerator;
-    use crate::types::{RepoMetadata, TokenCounts, LanguageStats, RepoFile};
+    use crate::types::{LanguageStats, RepoFile, RepoMetadata, TokenCounts};
 
     fn create_test_repo() -> Repository {
         Repository {
@@ -340,13 +337,7 @@ mod tests {
                 relative_path: "main.py".to_string(),
                 language: Some("python".to_string()),
                 size_bytes: 100,
-                token_count: TokenCounts {
-                    claude: 50,
-                    gpt4o: 48,
-                    gpt4: 49,
-                    gemini: 47,
-                    llama: 46,
-                },
+                token_count: TokenCounts { claude: 50, gpt4o: 48, gpt4: 49, gemini: 47, llama: 46 },
                 symbols: Vec::new(),
                 importance: 0.8,
                 content: Some("def main():\n    print('hello')".to_string()),
