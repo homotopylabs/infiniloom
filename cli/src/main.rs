@@ -543,7 +543,6 @@ fn cmd_pack(
         read_contents: true,
         max_file_size: 50 * 1024 * 1024, // 50MB
         skip_symbols: !enable_symbols,   // Skip by default unless --symbols or --full
-        ..Default::default()
     };
 
     let mut repo =
@@ -1032,7 +1031,6 @@ fn cmd_pack(
                         read_contents: true,
                         max_file_size: 50 * 1024 * 1024,
                         skip_symbols: !enable_symbols,
-                        ..Default::default()
                     };
 
                     if let Ok(mut new_repo) = scanner::scan_repository(&repo_path, scan_config) {
@@ -1092,7 +1090,6 @@ fn cmd_scan(
         read_contents: false, // Don't need content for stats
         max_file_size: 50 * 1024 * 1024,
         skip_symbols: true, // No need for symbols in scan mode
-        ..Default::default()
     };
 
     let repo = scanner::scan_repository(&path, config).context("Failed to scan repository")?;
@@ -1178,7 +1175,6 @@ fn cmd_map(path: PathBuf, budget: u32, output: Option<PathBuf>) -> Result<()> {
         read_contents: true,
         max_file_size: 50 * 1024 * 1024,
         skip_symbols: false, // Map command needs symbols for ranking
-        ..Default::default()
     };
 
     let mut repo = scanner::scan_repository(&path, config).context("Failed to scan repository")?;

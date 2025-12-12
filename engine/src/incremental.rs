@@ -423,9 +423,6 @@ pub fn get_mtime(path: &Path) -> Option<u64> {
         .map(|d| d.as_secs())
 }
 
-// Add bincode for serialization
-use serde;
-
 #[cfg(test)]
 #[allow(clippy::str_to_string)]
 mod tests {

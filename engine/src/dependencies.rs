@@ -895,6 +895,7 @@ mod tests {
     use super::*;
     use crate::types::{Symbol, TokenCounts};
 
+    #[allow(dead_code)]
     fn create_test_file(path: &str, imports: Vec<&str>) -> RepoFile {
         let symbols: Vec<Symbol> = imports
             .iter()
