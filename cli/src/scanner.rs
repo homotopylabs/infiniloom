@@ -1,13 +1,9 @@
 //! Repository scanner for Infiniloom CLI
 //!
-//! This module provides both a Zig-accelerated scanner (when `zig-core` feature is enabled)
-//! and a pure Rust fallback for portability.
-//!
 //! Performance notes:
-//! - Zig core: Fastest option, uses optimized Zig file walker
-//! - Rust fallback: Uses `ignore` crate (respects .gitignore)
+//! - Uses `ignore` crate for fast gitignore-respecting file walking
 //! - File reading and parsing are parallelized with rayon
-//! - Parser cache enables true parallel tree-sitter parsing
+//! - Thread-local parsers enable lock-free parallel tree-sitter parsing
 //! - Use --skip-symbols for 80x speedup on large repos
 
 use anyhow::{Context, Result};
@@ -19,7 +15,6 @@ use std::path::{Path, PathBuf};
 use infiniloom_engine::dependencies::DependencyGraph;
 use infiniloom_engine::parser::{Language, Parser};
 use infiniloom_engine::types::{LanguageStats, RepoFile, RepoMetadata, Repository, TokenCounts};
-use infiniloom_engine::ZigCore;
 
 // Thread-local parser for each rayon worker
 // This avoids mutex contention by giving each thread its own parser
@@ -55,8 +50,6 @@ pub(crate) struct ScanConfig {
     pub max_file_size: u64,
     /// Skip symbol extraction (faster for large repos)
     pub skip_symbols: bool,
-    /// Use Zig core for scanning (if available)
-    pub use_zig_core: bool,
 }
 
 impl Default for ScanConfig {
@@ -67,21 +60,8 @@ impl Default for ScanConfig {
             read_contents: false,
             max_file_size: 50 * 1024 * 1024, // 50MB
             skip_symbols: false,
-            use_zig_core: ZigCore::is_available(),
         }
     }
-}
-
-/// Check if Zig core is available
-#[allow(dead_code)]
-pub(crate) fn is_zig_core_available() -> bool {
-    ZigCore::is_available()
-}
-
-/// Get Zig core version (or "rust-fallback" if not available)
-#[allow(dead_code)]
-pub(crate) fn zig_core_version() -> String {
-    ZigCore::version()
 }
 
 /// File info collected during initial walk
@@ -94,9 +74,6 @@ struct FileInfo {
 
 /// Scan a repository and return a Repository struct
 /// Uses parallel processing for improved performance on large repositories
-///
-/// When `use_zig_core` is true and Zig core is available, uses the faster
-/// Zig-based file walker. Otherwise falls back to pure Rust implementation.
 pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Repository> {
     let path = path.canonicalize().context("Invalid repository path")?;
 
@@ -105,16 +82,6 @@ pub(crate) fn scan_repository(path: &Path, config: ScanConfig) -> Result<Reposit
         .and_then(|n| n.to_str())
         .unwrap_or("repository")
         .to_owned();
-
-    // Try Zig core first if enabled
-    if config.use_zig_core {
-        if let Some(zig_core) = ZigCore::new() {
-            log::info!("Using Zig core for scanning (version: {})", ZigCore::version());
-            return scan_with_zig_core(&path, &repo_name, &config, &zig_core);
-        } else {
-            log::debug!("Zig core requested but not available, falling back to Rust");
-        }
-    }
 
     // Phase 1: Collect file paths (fast, sequential walk with ignore filtering)
     let file_infos = collect_file_infos(&path, &config)?;
@@ -561,155 +528,6 @@ fn detect_git_commit(path: &Path) -> Option<String> {
     }
 }
 
-// ============================================================================
-// Zig Core Scanner
-// ============================================================================
-
-/// Scan repository using Zig core for maximum performance
-fn scan_with_zig_core(
-    path: &Path,
-    repo_name: &str,
-    config: &ScanConfig,
-    zig_core: &ZigCore,
-) -> Result<Repository> {
-    let path_str = path.to_string_lossy();
-
-    // Perform fast directory scan with Zig
-    let scan_result = zig_core
-        .scan(&path_str, config.include_hidden, config.respect_gitignore, config.max_file_size)
-        .map_err(|e| anyhow::anyhow!("Zig scan failed: {}", e))?;
-
-    log::info!(
-        "Zig scan completed: {} files, {} bytes in {}ms",
-        scan_result.file_count,
-        scan_result.total_bytes,
-        scan_result.scan_time_ms
-    );
-
-    // Collect files from Zig core
-    let mut files = Vec::with_capacity(scan_result.file_count as usize);
-    let mut language_counts: HashMap<String, u32> = HashMap::new();
-
-    for i in 0..zig_core.file_count() {
-        if let Some(zig_file) = zig_core.get_file(i) {
-            // Read content if needed
-            let content = if config.read_contents {
-                std::fs::read_to_string(&zig_file.path).ok()
-            } else {
-                None
-            };
-
-            // Parse symbols if needed
-            let symbols = if config.read_contents && !config.skip_symbols {
-                content
-                    .as_ref()
-                    .map(|c| parse_with_thread_local(c, Path::new(&zig_file.path)))
-                    .unwrap_or_default()
-            } else {
-                Vec::new()
-            };
-
-            // Count tokens
-            let token_count = if let Some(ref text) = content {
-                let counts = zig_core.count_tokens_all(text);
-                TokenCounts {
-                    claude: counts.claude,
-                    gpt4o: counts.gpt4o,
-                    gpt4: counts.gpt4,
-                    gemini: counts.gemini,
-                    llama: counts.llama,
-                }
-            } else {
-                estimate_tokens(zig_file.size_bytes, None)
-            };
-
-            // Track language stats
-            if let Some(ref lang) = zig_file.language {
-                *language_counts.entry(lang.clone()).or_insert(0) += 1;
-            }
-
-            files.push(RepoFile {
-                path: PathBuf::from(&zig_file.path),
-                relative_path: zig_file.relative_path,
-                language: zig_file.language,
-                size_bytes: zig_file.size_bytes,
-                token_count,
-                symbols,
-                importance: zig_file.importance,
-                content,
-            });
-        }
-    }
-
-    // Build language stats
-    let total_files = files.len() as u32;
-    let languages: Vec<LanguageStats> = language_counts
-        .into_iter()
-        .map(|(lang, count)| {
-            let percentage = if total_files > 0 {
-                (count as f32 / total_files as f32) * 100.0
-            } else {
-                0.0
-            };
-            LanguageStats { language: lang, files: count, lines: 0, percentage }
-        })
-        .collect();
-
-    // Aggregate token counts
-    let total_tokens = TokenCounts {
-        claude: files.iter().map(|f| f.token_count.claude).sum(),
-        gpt4o: files.iter().map(|f| f.token_count.gpt4o).sum(),
-        gpt4: files.iter().map(|f| f.token_count.gpt4).sum(),
-        gemini: files.iter().map(|f| f.token_count.gemini).sum(),
-        llama: files.iter().map(|f| f.token_count.llama).sum(),
-    };
-
-    let total_lines: u64 = files
-        .iter()
-        .map(|f| {
-            f.content
-                .as_ref()
-                .map(|c| c.lines().count() as u64)
-                .unwrap_or_else(|| estimate_lines(f.size_bytes))
-        })
-        .sum();
-
-    let branch = detect_git_branch(path);
-    let commit = detect_git_commit(path);
-    let directory_structure = generate_directory_structure(&files);
-
-    // Build dependency graph and extract external dependencies
-    let temp_repo = Repository {
-        name: repo_name.to_owned(),
-        path: path.to_path_buf(),
-        files: files.clone(),
-        metadata: RepoMetadata::default(),
-    };
-    let dep_graph = DependencyGraph::build(&temp_repo);
-    let mut external_dependencies: Vec<String> =
-        dep_graph.get_external_deps().iter().cloned().collect();
-    external_dependencies.sort();
-
-    Ok(Repository {
-        name: repo_name.to_owned(),
-        path: path.to_path_buf(),
-        files,
-        metadata: RepoMetadata {
-            total_files,
-            total_lines,
-            total_tokens,
-            languages,
-            framework: None,
-            description: None,
-            branch,
-            commit,
-            directory_structure: Some(directory_structure),
-            external_dependencies,
-            git_history: None,
-        },
-    })
-}
-
 /// Generate a tree-like directory structure from file paths
 fn generate_directory_structure(files: &[RepoFile]) -> String {
     use std::collections::BTreeSet;
@@ -792,13 +610,6 @@ fn generate_directory_structure(files: &[RepoFile]) -> String {
 mod tests {
     use super::*;
     use std::path::PathBuf;
-
-    #[test]
-    fn test_zig_core_availability() {
-        let available = is_zig_core_available();
-        println!("Zig core available: {}", available);
-        println!("Version: {}", zig_core_version());
-    }
 
     #[test]
     fn test_detect_language() {

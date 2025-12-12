@@ -71,8 +71,6 @@ predicates = "3.1"
 
 [features]
 default = []
-# Enable Zig core for maximum performance
-zig-core = ["infiniloom-engine/zig-core"]
 # Enable clipboard support
 clipboard = ["dep:clipboard"]
 

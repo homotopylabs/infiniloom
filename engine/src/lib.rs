@@ -45,11 +45,8 @@ pub mod tokenizer;
 #[cfg(feature = "embeddings")]
 pub mod semantic;
 
-pub mod ffi;
-
 // Re-exports from core modules
 pub use chunking::{Chunk, ChunkStrategy, Chunker};
-pub use ffi::{estimate_tokens, is_binary, CompressionConfig, LanguageId, ZigCore};
 pub use output::{OutputFormat, OutputFormatter};
 pub use parser::{Language, Parser, ParserError};
 pub use ranking::{rank_files, sort_files_by_importance, SymbolRanker};

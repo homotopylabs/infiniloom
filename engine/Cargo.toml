@@ -6,7 +6,6 @@ rust-version = "1.91"
 description = "Repository context engine for infiniloom"
 license = "MIT"
 repository = "https://github.com/homotopylabs/infiniloom"
-build = "build.rs"
 
 [lib]
 name = "infiniloom_engine"
@@ -25,9 +24,6 @@ anyhow = "1.0"
 # Async runtime
 tokio = { version = "1.35", features = ["full"], optional = true }
 async-trait = { version = "0.1", optional = true }
-
-# FFI
-libc = "0.2"
 
 # Graph algorithms (PageRank)
 petgraph = "0.6"
@@ -98,7 +94,6 @@ optional = true
 default = []
 async = ["tokio", "async-trait"]
 embeddings = ["candle-core", "candle-transformers"]
-zig-core = []
 watch = ["notify"]
 git = ["gix"]
 full = ["async", "embeddings", "watch", "git"]
