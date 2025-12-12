@@ -13,7 +13,7 @@ OUTPUTS_DIR = TEST_ROOT / "outputs"
 REPORTS_DIR = TEST_ROOT / "reports"
 
 # Tool paths
-CODELOOM_BIN = PROJECT_ROOT / "target" / "release" / "codeloom"
+CODELOOM_BIN = PROJECT_ROOT / "target" / "release" / "infiniloom"
 REPOMIX_BIN = "repomix"  # Assumes globally installed
 
 
@@ -61,7 +61,7 @@ TEST_REPOSITORIES = [
         description="JavaScript/TypeScript runtime with Rust core",
         branch="main",
         expected_files_min=500,
-        expected_files_max=5000,
+        expected_files_max=15000,  # Deno has grown significantly
         primary_languages=("rust", "typescript", "javascript"),
         complexity="complex",
     ),

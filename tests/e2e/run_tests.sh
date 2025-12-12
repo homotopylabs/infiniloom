@@ -31,18 +31,18 @@ if ! python3 -c "import pytest" &> /dev/null; then
 fi
 echo "  pytest: installed"
 
-# Check for CodeLoom
-CODELOOM_BIN="$PROJECT_ROOT/core/zig-out/bin/codeloom-scan"
+# Check for Infiniloom (Rust CLI)
+CODELOOM_BIN="$PROJECT_ROOT/target/release/infiniloom"
 if [ -f "$CODELOOM_BIN" ]; then
-    echo "  CodeLoom: $CODELOOM_BIN"
+    echo "  Infiniloom: $CODELOOM_BIN"
 else
-    echo "  CodeLoom: NOT FOUND - building..."
-    cd "$PROJECT_ROOT/core"
-    zig build
+    echo "  Infiniloom: NOT FOUND - building..."
+    cd "$PROJECT_ROOT"
+    cargo build --release
     if [ -f "$CODELOOM_BIN" ]; then
-        echo "  CodeLoom: built successfully"
+        echo "  Infiniloom: built successfully"
     else
-        echo "ERROR: Failed to build CodeLoom"
+        echo "ERROR: Failed to build Infiniloom"
         exit 1
     fi
 fi

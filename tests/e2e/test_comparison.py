@@ -128,31 +128,31 @@ class TestCodeLoomBaseline:
     """Tests for CodeLoom baseline functionality."""
 
     def test_codeloom_runs(self, test_repo: TestRepo, codeloom_available):
-        """Test that CodeLoom can process a repository."""
+        """Test that Infiniloom can process a repository."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         repo_path = clone_repo_fixture(test_repo)
 
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path)],
+            [str(CODELOOM_BIN), "scan", str(repo_path)],
             capture_output=True,
             timeout=600,
             text=True,
         )
 
-        assert result.returncode == 0, f"CodeLoom failed: {result.stderr}"
-        assert "Files:" in result.stdout, "CodeLoom output missing file count"
+        assert result.returncode == 0, f"Infiniloom failed: {result.stderr}"
+        assert "Files:" in result.stdout, "Infiniloom output missing file count"
 
     def test_codeloom_detects_files(self, test_repo: TestRepo, codeloom_available):
-        """Test that CodeLoom detects the expected number of files."""
+        """Test that Infiniloom detects the expected number of files."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         repo_path = clone_repo_fixture(test_repo)
 
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path), "--verbose"],
+            [str(CODELOOM_BIN), "scan", str(repo_path), "--verbose"],
             capture_output=True,
             timeout=600,
             text=True,
@@ -170,14 +170,14 @@ class TestCodeLoomBaseline:
             f"Too many files: {file_count} > {test_repo.expected_files_max}"
 
     def test_codeloom_language_detection(self, test_repo: TestRepo, codeloom_available):
-        """Test that CodeLoom detects the primary languages."""
+        """Test that Infiniloom detects the primary languages."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         repo_path = clone_repo_fixture(test_repo)
 
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path), "--verbose"],
+            [str(CODELOOM_BIN), "scan", str(repo_path), "--verbose"],
             capture_output=True,
             timeout=600,
             text=True,
@@ -192,12 +192,12 @@ class TestCodeLoomBaseline:
 
 
 class TestPerformanceComparison:
-    """Performance comparison tests between CodeLoom and Repomix."""
+    """Performance comparison tests between Infiniloom and Repomix."""
 
     def test_codeloom_faster_than_repomix(self, test_repo: TestRepo, codeloom_available, repomix_available):
-        """Test that CodeLoom is at least as fast as Repomix (with tolerance)."""
+        """Test that Infiniloom is at least as fast as Repomix (with tolerance)."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
         if not repomix_available:
             pytest.skip("Repomix not installed")
 
@@ -214,23 +214,23 @@ class TestPerformanceComparison:
         )
         repomix_time = time.time() - start
 
-        # Run CodeLoom
+        # Run Infiniloom
         start = time.time()
         subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path)],
+            [str(CODELOOM_BIN), "scan", str(repo_path)],
             capture_output=True,
             timeout=600,
         )
         codeloom_time = time.time() - start
 
-        # CodeLoom should be within 5x of Repomix time (generous for now)
+        # Infiniloom should be within 5x of Repomix time (generous for now)
         # Ideally it should be faster
         assert codeloom_time <= repomix_time * 5, \
-            f"CodeLoom too slow: {codeloom_time:.2f}s vs Repomix {repomix_time:.2f}s"
+            f"Infiniloom too slow: {codeloom_time:.2f}s vs Repomix {repomix_time:.2f}s"
 
         # Log the comparison
         speedup = repomix_time / max(codeloom_time, 0.001)
-        print(f"\n  {test_repo.name}: CodeLoom {codeloom_time:.2f}s, Repomix {repomix_time:.2f}s, Speedup: {speedup:.2f}x")
+        print(f"\n  {test_repo.name}: Infiniloom {codeloom_time:.2f}s, Repomix {repomix_time:.2f}s, Speedup: {speedup:.2f}x")
 
 
 class TestFileCoverage:
@@ -239,7 +239,7 @@ class TestFileCoverage:
     def test_similar_file_counts(self, test_repo: TestRepo, codeloom_available, repomix_available):
         """Test that both tools detect similar numbers of files."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
         if not repomix_available:
             pytest.skip("Repomix not installed")
 
@@ -257,9 +257,9 @@ class TestFileCoverage:
         repomix_match = re.search(r"(\d+)\s*files?", result.stdout + result.stderr, re.I)
         repomix_files = int(repomix_match.group(1)) if repomix_match else 0
 
-        # Get CodeLoom file count
+        # Get Infiniloom file count
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path)],
+            [str(CODELOOM_BIN), "scan", str(repo_path)],
             capture_output=True,
             timeout=600,
             text=True,
@@ -269,29 +269,29 @@ class TestFileCoverage:
 
         # Both should detect files
         assert repomix_files > 0, "Repomix detected 0 files"
-        assert codeloom_files > 0, "CodeLoom detected 0 files"
+        assert codeloom_files > 0, "Infiniloom detected 0 files"
 
         # File counts should be within 50% of each other
         # (some variance is expected due to different ignore rules)
         ratio = min(repomix_files, codeloom_files) / max(repomix_files, codeloom_files)
         assert ratio >= 0.5, \
-            f"File count mismatch: Repomix={repomix_files}, CodeLoom={codeloom_files}"
+            f"File count mismatch: Repomix={repomix_files}, Infiniloom={codeloom_files}"
 
-        print(f"\n  {test_repo.name}: Repomix={repomix_files}, CodeLoom={codeloom_files}, Ratio={ratio:.2f}")
+        print(f"\n  {test_repo.name}: Repomix={repomix_files}, Infiniloom={codeloom_files}, Ratio={ratio:.2f}")
 
 
 class TestOutputQuality:
     """Tests for output quality metrics."""
 
     def test_codeloom_output_size_reasonable(self, test_repo: TestRepo, codeloom_available):
-        """Test that CodeLoom output size is reasonable."""
+        """Test that Infiniloom output size is reasonable."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         repo_path = clone_repo_fixture(test_repo)
 
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(repo_path), "--verbose"],
+            [str(CODELOOM_BIN), "scan", str(repo_path), "--verbose"],
             capture_output=True,
             timeout=600,
             text=True,
@@ -310,9 +310,9 @@ class TestQuickSmoke:
     """Quick smoke tests that don't require cloning large repos."""
 
     def test_codeloom_help(self, codeloom_available):
-        """Test CodeLoom --help works."""
+        """Test Infiniloom --help works."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         result = subprocess.run(
             [str(CODELOOM_BIN), "--help"],
@@ -322,13 +322,13 @@ class TestQuickSmoke:
         )
 
         assert result.returncode == 0
-        assert "codeloom-scan" in result.stdout
-        assert "OPTIONS" in result.stdout
+        assert "infiniloom" in result.stdout.lower()
+        assert "pack" in result.stdout.lower() or "scan" in result.stdout.lower()
 
     def test_codeloom_version(self, codeloom_available):
-        """Test CodeLoom --version works."""
+        """Test Infiniloom --version works."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
         result = subprocess.run(
             [str(CODELOOM_BIN), "--version"],
@@ -356,15 +356,15 @@ class TestQuickSmoke:
         assert "repomix" in result.stdout.lower()
 
     def test_scan_current_directory(self, codeloom_available):
-        """Test scanning the CodeLoom repo itself."""
+        """Test scanning the Infiniloom repo itself."""
         if not codeloom_available:
-            pytest.skip("CodeLoom not built")
+            pytest.skip("Infiniloom not built")
 
-        # Scan the codeloom project itself
+        # Scan the infiniloom project itself
         from config import PROJECT_ROOT
 
         result = subprocess.run(
-            [str(CODELOOM_BIN), str(PROJECT_ROOT)],
+            [str(CODELOOM_BIN), "scan", str(PROJECT_ROOT)],
             capture_output=True,
             timeout=60,
             text=True,
@@ -373,7 +373,7 @@ class TestQuickSmoke:
         assert result.returncode == 0
         assert "Files:" in result.stdout
 
-        # Should find zig and rust files
+        # Should find rust files
         file_match = re.search(r"Files:\s*(\d+)", result.stdout)
         assert file_match and int(file_match.group(1)) > 0
 
