@@ -18,73 +18,62 @@ Building upon the initial analysis of Repomix and Gitingest, this document prese
 | **C++** | Excellent | Poor | Good | Excellent | Medium | Massive |
 | **Odin** | Excellent | Good | Good | Manual | Fast | Small |
 
-### Recommended: Zig Core with Rust Fallback
+### Recommended: Pure Rust Architecture
 
-#### Why Zig?
+#### Why Rust?
 
-1. **No Hidden Control Flow**
-   - Predictable execution for performance-critical code
-   - Easier to reason about memory and performance
+1. **Memory Safety Without GC**
+   - Zero-cost abstractions
+   - Compile-time memory safety guarantees
+   - No runtime overhead
 
-2. **Comptime (Compile-Time Execution)**
-   ```zig
-   // Generate lookup tables at compile time
-   const language_extensions = comptime blk: {
-       var map = std.AutoHashMap([]const u8, Language).init(allocator);
-       map.put(".py", .Python);
-       map.put(".ts", .TypeScript);
-       // ... 200+ extensions
-       break :blk map;
-   };
-   ```
+2. **Excellent Ecosystem**
+   - Tree-sitter Rust bindings
+   - tiktoken-rs for accurate token counting
+   - Rayon for parallel processing
+   - memmap2 for memory-mapped I/O
 
-3. **Zero-Dependency C/C++ Interop**
-   - Drop-in C compiler functionality
-   - Direct tree-sitter integration without wrapper overhead
-
-4. **Cross-Compilation Out of Box**
+3. **Cross-Platform Support**
    ```bash
-   # Build for all platforms from any machine
-   zig build -Dtarget=x86_64-linux-gnu
-   zig build -Dtarget=aarch64-macos
-   zig build -Dtarget=x86_64-windows-gnu
+   # Build for all platforms
+   cargo build --release --target x86_64-unknown-linux-gnu
+   cargo build --release --target aarch64-apple-darwin
+   cargo build --release --target x86_64-pc-windows-msvc
    ```
 
-5. **Predictable Memory Management**
-   - Explicit allocators for fine-grained control
-   - No hidden allocations
+4. **Performance**
+   - Thread-local parsers for lock-free parallelism
+   - Memory-mapped file processing
+   - Zero-copy where possible
 
-6. **WASM Compilation**
+5. **WASM Support**
    ```bash
-   # Native WASM output for browser/edge execution
-   zig build -Dtarget=wasm32-wasi
+   # WASM output for browser/edge execution
+   wasm-pack build --target web
    ```
 
-#### Hybrid Architecture: Zig + Rust
+#### Architecture
 
 ```
 infiniloom/
-├── core/                       # Zig core (performance-critical)
-│   ├── src/
-│   │   ├── parser/             # AST parsing (tree-sitter bindings)
-│   │   ├── scanner/            # File system scanning
-│   │   ├── tokenizer/          # Token counting
-│   │   └── compressor/         # Code compression
-│   ├── build.zig
-│   └── exports.zig             # C ABI exports
+├── cli/                        # Rust CLI application
+│   └── src/
+│       ├── main.rs             # Entry point
+│       └── scanner.rs          # Parallel file scanning
 │
-├── engine/                     # Rust engine (complex logic)
+├── engine/                     # Core Rust engine
 │   ├── src/
-│   │   ├── semantic/           # Semantic analysis
-│   │   ├── embeddings/         # Vector embeddings
-│   │   ├── ranking/            # File importance ranking
-│   │   └── chunking/           # Intelligent chunking
+│   │   ├── parser.rs           # Tree-sitter AST parsing
+│   │   ├── repomap/            # PageRank symbol ranking
+│   │   ├── output/             # Format generators
+│   │   ├── security.rs         # Secret detection
+│   │   └── config.rs           # Configuration
 │   └── Cargo.toml
 │
 ├── bindings/
 │   ├── python/                 # PyO3 bindings
 │   ├── node/                   # NAPI-RS bindings
-│   └── wasm/                   # WASM bindings
+│   └── wasm/                   # WebAssembly bindings
 ```
 
 ---
@@ -1111,7 +1100,7 @@ optimizer = LocalOptimizer(
 ```
                     ┌─────────────────┐
                     │   File Scanner  │
-                    │   (Zig/Rayon)   │
+                    │     (Rayon)     │
                     └────────┬────────┘
                              │
               ┌──────────────┼──────────────┐
@@ -1152,40 +1141,30 @@ optimizer = LocalOptimizer(
 
 ### 5.2 Memory-Mapped File Processing
 
-```zig
-// Zig implementation for memory-efficient file processing
-const std = @import("std");
+```rust
+// Rust implementation for memory-efficient file processing
+use memmap2::Mmap;
+use std::fs::File;
+use std::io::Result;
 
-pub const FileProcessor = struct {
-    allocator: std.mem.Allocator,
+pub struct FileProcessor;
 
-    pub fn processLargeFile(self: *FileProcessor, path: []const u8) !ProcessedFile {
+impl FileProcessor {
+    pub fn process_large_file(path: &str) -> Result<ProcessedFile> {
         // Memory-map the file instead of loading into RAM
-        const file = try std.fs.cwd().openFile(path, .{});
-        defer file.close();
-
-        const stat = try file.stat();
-        const mapped = try std.os.mmap(
-            null,
-            stat.size,
-            std.os.PROT.READ,
-            std.os.MAP.PRIVATE,
-            file.handle,
-            0,
-        );
-        defer std.os.munmap(mapped);
+        let file = File::open(path)?;
+        let mmap = unsafe { Mmap::map(&file)? };
 
         // Process in streaming fashion
-        var result = ProcessedFile.init(self.allocator);
+        let mut result = ProcessedFile::new();
 
-        var line_iter = std.mem.split(u8, mapped, "\n");
-        while (line_iter.next()) |line| {
-            try result.processLine(line);
+        for line in mmap.split(|&b| b == b'\n') {
+            result.process_line(line);
         }
 
-        return result;
+        Ok(result)
     }
-};
+}
 ```
 
 ### 5.3 GPU-Accelerated Token Counting
@@ -1255,15 +1234,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Zig build for native targets
-      - name: Build with Zig
-        run: zig build -Dtarget=${{ matrix.target }} -Doptimize=ReleaseFast
+      # Rust build for native targets
+      - name: Build with Cargo
+        run: cargo build --release --target ${{ matrix.target }}
 
       # Upload artifacts
       - uses: actions/upload-artifact@v4
         with:
           name: infiniloom-${{ matrix.target }}
-          path: zig-out/bin/infiniloom*
+          path: target/${{ matrix.target }}/release/infiniloom*
 ```
 
 ### 6.2 Package Distribution
@@ -1413,24 +1392,24 @@ curl -fsSL https://infiniloom.dev/install.sh | sh
 
 ## Part 8: Summary of Innovations
 
-### What Makes CodeLoom Superior
+### What Makes Infiniloom Superior
 
 | Innovation | Benefit | Implementation |
 |------------|---------|----------------|
-| **Zig Core** | 10-100x faster than JS/Python | Zig + tree-sitter |
+| **Pure Rust** | 10-100x faster than JS/Python | Rust + tree-sitter + Rayon |
 | **Model Flavors** | Optimized for each LLM | Config-driven formatters |
 | **Repo Map** | Efficient overview | Graph ranking algorithms |
 | **Embeddings** | Semantic search | CodeBERT/StarCoder |
 | **Prompt Caching** | 90% cost reduction | Structure optimization |
 | **Incremental** | Fast updates | Content addressing |
-| **WASM** | Run anywhere | Zig WASM target |
+| **WASM** | Run anywhere | wasm-pack target |
 | **Streaming** | Handle any size | Backpressure system |
 | **Plugins** | Extensible | Hook-based SDK |
 | **Multi-modal** | Images + code | Diagram extraction |
 
 ### Infiniloom Competitive Moat
 
-1. **Performance**: Zig core is unmatched
+1. **Performance**: Pure Rust with Rayon parallelism is unmatched
 2. **Intelligence**: Embeddings + ranking = smart context
 3. **Flexibility**: Plugin system for any use case
 4. **Universality**: WASM runs everywhere
@@ -1489,28 +1468,31 @@ curl -fsSL https://infiniloom.dev/install.sh | sh
 
 **Verdict:** Interesting but too immature for production.
 
-### A.4 Zig + Rust Hybrid Justification
+### A.4 Why Pure Rust?
 
-**Zig for:**
-- File I/O (mmap, async)
-- AST parsing (tree-sitter bindings)
-- Token counting (hot path)
-- WASM compilation
+After evaluating hybrid approaches, we chose pure Rust for simplicity and performance:
 
-**Rust for:**
+**Pure Rust provides:**
+- File I/O (memmap2 for mmap)
+- AST parsing (tree-sitter Rust bindings)
+- Token counting (tiktoken-rs for accurate BPE)
+- WASM compilation (wasm-pack)
 - Complex algorithms (ranking, embeddings)
 - Plugin system (trait-based)
 - Async networking (tokio)
 - Safety-critical logic
+- Parallel processing (Rayon)
 
-**Bridge:**
-- Zig exports C ABI
-- Rust calls via FFI
-- Shared memory for large data
-- Zero-copy where possible
+**Benefits of pure Rust:**
+- No FFI overhead or complexity
+- Single toolchain (cargo)
+- Memory safety throughout
+- Excellent ecosystem
+- Simpler builds and CI/CD
+- Better debugging experience
 
-This hybrid approach gives us:
-- Maximum performance (Zig)
-- Safety guarantees (Rust)
-- Ecosystem access (both)
-- WASM support (Zig)
+This pure Rust approach gives us:
+- Maximum performance (zero-cost abstractions)
+- Safety guarantees (borrow checker)
+- Rich ecosystem (crates.io)
+- WASM support (wasm-pack)

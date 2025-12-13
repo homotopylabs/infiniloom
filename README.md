@@ -25,7 +25,7 @@ infiniloom pack . --format xml --output context.xml
 
 **Why Infiniloom?**
 
-- **Blazing Fast**: High-performance Rust + Zig hybrid architecture
+- **Blazing Fast**: High-performance pure Rust architecture
 - **Smart**: AST-based symbol extraction with PageRank importance ranking
 - **Optimized**: Model-specific output formats (XML for Claude, Markdown for GPT)
 - **Secure**: Automatic detection and redaction of secrets and API keys
@@ -55,7 +55,6 @@ cp target/release/infiniloom /usr/local/bin/
 | Tool | Version | Installation |
 |------|---------|-------------|
 | Rust | 1.75+ | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| Zig | 0.13+ | `brew install zig` or [ziglang.org](https://ziglang.org/download/) |
 
 ### Package Managers (Coming Soon)
 
@@ -102,6 +101,9 @@ infiniloom pack . --format xml --model claude
 
 # Markdown format — optimized for GPT-4/GPT-4o
 infiniloom pack . --format markdown --model gpt-4o
+
+# TOON format — most token-efficient (~40% smaller than JSON)
+infiniloom pack . --format toon
 
 # JSON format — for programmatic use
 infiniloom pack . --format json
@@ -158,6 +160,7 @@ infiniloom pack . --format xml | pbcopy
 | **Claude** | XML | Prompt caching hints, CDATA sections, structured tags |
 | **GPT-4/4o** | Markdown | Tables, code fences, hierarchical headers |
 | **Gemini** | YAML | Query at end, hierarchical structure |
+| **Any** | TOON | ~40% smaller than JSON, tabular metadata, minimal syntax |
 | **JSON** | JSON | Full metadata, programmatic access |
 
 ### AST-Based Symbol Extraction
@@ -262,7 +265,7 @@ const context = pack('/repo', 'xml', 'claude', 'balanced');
 
 ## Performance
 
-Infiniloom is designed for speed and efficiency, significantly outperforming existing solutions through its Rust + Zig hybrid architecture. Typical processing times for medium-sized repositories (100-500 files) are under 100ms.
+Infiniloom is designed for speed and efficiency, significantly outperforming existing solutions through its pure Rust architecture. Typical processing times for medium-sized repositories (100-500 files) are under 100ms.
 
 ---
 
@@ -409,10 +412,6 @@ infiniloom/
 │   │   ├── repomap/     # PageRank symbol ranking
 │   │   ├── output/      # Format generators
 │   │   └── security.rs  # Secret detection
-├── core/                # Zig performance core
-│   └── src/
-│       ├── tokenizer/   # Fast token counting
-│       └── compressor/  # Code compression
 ├── bindings/
 │   ├── python/          # PyO3 bindings
 │   ├── node/            # NAPI-RS bindings
@@ -425,9 +424,6 @@ infiniloom/
 ```bash
 # Build everything
 cargo build --release
-
-# Build with Zig core (maximum performance)
-cargo build --release --features zig-core
 
 # Run tests
 cargo test

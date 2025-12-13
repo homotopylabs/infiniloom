@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Basic usage examples for CodeLoom Python bindings.
+Basic usage examples for Infiniloom Python bindings.
 """
 
-import codeloom
-from codeloom import CodeLoom
+import infiniloom
+from infiniloom import Infiniloom
 
 
 def functional_api_examples():
@@ -13,8 +13,8 @@ def functional_api_examples():
 
     # Example 1: Pack a repository
     print("1. Packing repository...")
-    context = codeloom.pack(
-        "../../",  # CodeLoom repo itself
+    context = infiniloom.pack(
+        "../../",  # Infiniloom repo itself
         format="xml",
         model="claude",
         compression="balanced",
@@ -24,7 +24,7 @@ def functional_api_examples():
 
     # Example 2: Scan repository
     print("2. Scanning repository...")
-    stats = codeloom.scan("../../", respect_gitignore=True)
+    stats = infiniloom.scan("../../", respect_gitignore=True)
     print(f"Name: {stats['name']}")
     print(f"Files: {stats['total_files']}")
     print(f"Lines: {stats['total_lines']}")
@@ -36,13 +36,13 @@ def functional_api_examples():
     print("3. Counting tokens...")
     text = "Hello, world! This is a test."
     for model in ["claude", "gpt", "gemini"]:
-        tokens = codeloom.count_tokens(text, model=model)
+        tokens = infiniloom.count_tokens(text, model=model)
         print(f"  {model}: {tokens} tokens")
     print()
 
     # Example 4: Security scan
     print("4. Security scanning...")
-    findings = codeloom.scan_security("../../")
+    findings = infiniloom.scan_security("../../")
     print(f"Found {len(findings)} potential security issues")
     if findings:
         print(f"First finding: {findings[0]['severity']} - {findings[0]['message']}")
@@ -53,8 +53,8 @@ def oo_api_examples():
     """Examples using the object-oriented API."""
     print("\n=== Object-Oriented API Examples ===\n")
 
-    # Create CodeLoom instance
-    loom = CodeLoom("../../")
+    # Create Infiniloom instance
+    loom = Infiniloom("../../")
     print(f"Created: {loom}\n")
 
     # Example 1: Get stats
@@ -114,7 +114,7 @@ def format_examples():
     """Examples of different output formats."""
     print("\n=== Format Examples ===\n")
 
-    loom = CodeLoom("../../")
+    loom = Infiniloom("../../")
 
     formats = [
         ("xml", "claude"),
@@ -135,7 +135,7 @@ def compression_examples():
     """Examples of different compression levels."""
     print("\n=== Compression Examples ===\n")
 
-    loom = CodeLoom("../../")
+    loom = Infiniloom("../../")
 
     levels = ["none", "minimal", "balanced", "aggressive", "extreme"]
 
@@ -163,12 +163,12 @@ def main():
         format_examples()
         compression_examples()
 
-        print("\n✓ All examples completed successfully!")
+        print("\n All examples completed successfully!")
 
-    except codeloom.CodeLoomError as e:
-        print(f"\n✗ CodeLoom error: {e}")
+    except infiniloom.InfiniloomError as e:
+        print(f"\n Infiniloom error: {e}")
     except Exception as e:
-        print(f"\n✗ Unexpected error: {e}")
+        print(f"\n Unexpected error: {e}")
 
 
 if __name__ == "__main__":

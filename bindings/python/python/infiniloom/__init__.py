@@ -1,8 +1,8 @@
 """
-CodeLoom Python Bindings
-========================
+Infiniloom Python Bindings
+==========================
 
-CodeLoom is a repository context engine for Large Language Models (LLMs).
+Infiniloom is a repository context engine for Large Language Models (LLMs).
 It analyzes codebases and generates optimized context for AI assistants.
 
 Basic Usage
@@ -10,26 +10,26 @@ Basic Usage
 
 Functional API (quick and simple):
 
-    >>> import codeloom
+    >>> import infiniloom
     >>>
     >>> # Pack a repository into Claude-optimized XML
-    >>> context = codeloom.pack("/path/to/repo", format="xml", model="claude")
+    >>> context = infiniloom.pack("/path/to/repo", format="xml", model="claude")
     >>>
     >>> # Scan a repository and get statistics
-    >>> stats = codeloom.scan("/path/to/repo")
+    >>> stats = infiniloom.scan("/path/to/repo")
     >>> print(f"Files: {stats['total_files']}")
     >>> print(f"Lines: {stats['total_lines']}")
     >>>
     >>> # Count tokens in text
-    >>> tokens = codeloom.count_tokens("Hello, world!", model="claude")
+    >>> tokens = infiniloom.count_tokens("Hello, world!", model="claude")
     >>> print(f"Tokens: {tokens}")
 
 Object-Oriented API (more control):
 
-    >>> from codeloom import CodeLoom
+    >>> from infiniloom import Infiniloom
     >>>
-    >>> # Create a CodeLoom instance
-    >>> loom = CodeLoom("/path/to/repo")
+    >>> # Create an Infiniloom instance
+    >>> loom = Infiniloom("/path/to/repo")
     >>>
     >>> # Get statistics
     >>> stats = loom.stats()
@@ -60,6 +60,7 @@ Available Formats
 - **markdown**: GPT-optimized Markdown format
 - **json**: Generic JSON format
 - **yaml**: Gemini-optimized YAML format
+- **toon**: Most token-efficient (~40% smaller than JSON)
 
 Supported Models
 ----------------
@@ -85,22 +86,25 @@ Examples
 
 Generate context for different models:
 
-    >>> import codeloom
+    >>> import infiniloom
     >>>
     >>> # Claude (XML format)
-    >>> claude_ctx = codeloom.pack("/path/to/repo", format="xml", model="claude")
+    >>> claude_ctx = infiniloom.pack("/path/to/repo", format="xml", model="claude")
     >>>
     >>> # GPT (Markdown format)
-    >>> gpt_ctx = codeloom.pack("/path/to/repo", format="markdown", model="gpt")
+    >>> gpt_ctx = infiniloom.pack("/path/to/repo", format="markdown", model="gpt")
     >>>
     >>> # Gemini (YAML format)
-    >>> gemini_ctx = codeloom.pack("/path/to/repo", format="yaml", model="gemini")
+    >>> gemini_ctx = infiniloom.pack("/path/to/repo", format="yaml", model="gemini")
+    >>>
+    >>> # Most token-efficient (TOON format)
+    >>> toon_ctx = infiniloom.pack("/path/to/repo", format="toon")
 
 Advanced repository analysis:
 
-    >>> from codeloom import CodeLoom
+    >>> from infiniloom import Infiniloom
     >>>
-    >>> loom = CodeLoom("/path/to/my-project")
+    >>> loom = Infiniloom("/path/to/my-project")
     >>>
     >>> # Get detailed statistics
     >>> stats = loom.stats()
@@ -120,11 +124,11 @@ Advanced repository analysis:
 
 Integration with LLM APIs:
 
-    >>> import codeloom
+    >>> import infiniloom
     >>> import anthropic  # or openai, etc.
     >>>
     >>> # Generate repository context
-    >>> context = codeloom.pack(
+    >>> context = infiniloom.pack(
     ...     "/path/to/repo",
     ...     format="xml",
     ...     model="claude",
@@ -134,7 +138,7 @@ Integration with LLM APIs:
     >>> # Send to Claude
     >>> client = anthropic.Anthropic()
     >>> response = client.messages.create(
-    ...     model="claude-3-5-sonnet-20241022",
+    ...     model="claude-sonnet-4-20250514",
     ...     max_tokens=4096,
     ...     messages=[{
     ...         "role": "user",
@@ -144,13 +148,13 @@ Integration with LLM APIs:
     >>> print(response.content[0].text)
 """
 
-from ._codeloom import (
+from ._infiniloom import (
     pack,
     scan,
     count_tokens,
     scan_security,
-    CodeLoom,
-    CodeLoomError,
+    Infiniloom,
+    InfiniloomError,
     __version__,
 )
 
@@ -162,10 +166,10 @@ __all__ = [
     "scan_security",
 
     # Classes
-    "CodeLoom",
+    "Infiniloom",
 
     # Exceptions
-    "CodeLoomError",
+    "InfiniloomError",
 
     # Version
     "__version__",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Examples of integrating CodeLoom with various LLM APIs.
+Examples of integrating Infiniloom with various LLM APIs.
 
 Note: These examples require the respective LLM client libraries:
 - pip install anthropic
@@ -8,7 +8,7 @@ Note: These examples require the respective LLM client libraries:
 - pip install google-generativeai
 """
 
-import codeloom
+import infiniloom
 import os
 
 
@@ -17,14 +17,14 @@ def claude_example():
     try:
         import anthropic
     except ImportError:
-        print("⚠ Anthropic library not installed. Run: pip install anthropic")
+        print(" Anthropic library not installed. Run: pip install anthropic")
         return
 
     print("=== Claude Integration Example ===\n")
 
     # Generate context
     print("Generating repository context...")
-    context = codeloom.pack(
+    context = infiniloom.pack(
         "../../",
         format="xml",
         model="claude",
@@ -33,13 +33,13 @@ def claude_example():
     )
 
     print(f"Context size: {len(context)} characters")
-    tokens = codeloom.count_tokens(context, model="claude")
+    tokens = infiniloom.count_tokens(context, model="claude")
     print(f"Estimated tokens: {tokens}\n")
 
     # Check for API key
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("⚠ ANTHROPIC_API_KEY not set. Skipping API call.")
+        print(" ANTHROPIC_API_KEY not set. Skipping API call.")
         print("Set it with: export ANTHROPIC_API_KEY='your-key-here'")
         return
 
@@ -49,7 +49,7 @@ def claude_example():
 
     try:
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             max_tokens=1024,
             messages=[{
                 "role": "user",
@@ -63,7 +63,7 @@ def claude_example():
         print("-" * 60)
 
     except Exception as e:
-        print(f"✗ API call failed: {e}")
+        print(f" API call failed: {e}")
 
 
 def openai_example():
@@ -71,14 +71,14 @@ def openai_example():
     try:
         import openai
     except ImportError:
-        print("⚠ OpenAI library not installed. Run: pip install openai")
+        print(" OpenAI library not installed. Run: pip install openai")
         return
 
     print("\n=== OpenAI GPT Integration Example ===\n")
 
     # Generate context
     print("Generating repository context...")
-    context = codeloom.pack(
+    context = infiniloom.pack(
         "../../",
         format="markdown",
         model="gpt",
@@ -87,13 +87,13 @@ def openai_example():
     )
 
     print(f"Context size: {len(context)} characters")
-    tokens = codeloom.count_tokens(context, model="gpt")
+    tokens = infiniloom.count_tokens(context, model="gpt")
     print(f"Estimated tokens: {tokens}\n")
 
     # Check for API key
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        print("⚠ OPENAI_API_KEY not set. Skipping API call.")
+        print(" OPENAI_API_KEY not set. Skipping API call.")
         print("Set it with: export OPENAI_API_KEY='your-key-here'")
         return
 
@@ -117,7 +117,7 @@ def openai_example():
         print("-" * 60)
 
     except Exception as e:
-        print(f"✗ API call failed: {e}")
+        print(f" API call failed: {e}")
 
 
 def gemini_example():
@@ -125,14 +125,14 @@ def gemini_example():
     try:
         import google.generativeai as genai
     except ImportError:
-        print("⚠ Google AI library not installed. Run: pip install google-generativeai")
+        print(" Google AI library not installed. Run: pip install google-generativeai")
         return
 
     print("\n=== Google Gemini Integration Example ===\n")
 
     # Generate context
     print("Generating repository context...")
-    context = codeloom.pack(
+    context = infiniloom.pack(
         "../../",
         format="yaml",
         model="gemini",
@@ -141,13 +141,13 @@ def gemini_example():
     )
 
     print(f"Context size: {len(context)} characters")
-    tokens = codeloom.count_tokens(context, model="gemini")
+    tokens = infiniloom.count_tokens(context, model="gemini")
     print(f"Estimated tokens: {tokens}\n")
 
     # Check for API key
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        print("⚠ GOOGLE_API_KEY not set. Skipping API call.")
+        print(" GOOGLE_API_KEY not set. Skipping API call.")
         print("Set it with: export GOOGLE_API_KEY='your-key-here'")
         return
 
@@ -167,16 +167,16 @@ def gemini_example():
         print("-" * 60)
 
     except Exception as e:
-        print(f"✗ API call failed: {e}")
+        print(f" API call failed: {e}")
 
 
 def multi_model_comparison():
     """Compare responses from multiple models."""
     print("\n=== Multi-Model Comparison ===\n")
 
-    from codeloom import CodeLoom
+    from infiniloom import Infiniloom
 
-    loom = CodeLoom("../../")
+    loom = Infiniloom("../../")
     stats = loom.stats()
 
     print(f"Repository: {stats['name']}")
@@ -184,9 +184,9 @@ def multi_model_comparison():
 
     # Generate contexts for different models
     models_config = [
-        ("claude", "xml", codeloom.count_tokens),
-        ("gpt", "markdown", codeloom.count_tokens),
-        ("gemini", "yaml", codeloom.count_tokens),
+        ("claude", "xml", infiniloom.count_tokens),
+        ("gpt", "markdown", infiniloom.count_tokens),
+        ("gemini", "yaml", infiniloom.count_tokens),
     ]
 
     print("Token counts by model:")
@@ -204,7 +204,7 @@ def multi_model_comparison():
 
 def main():
     """Run all integration examples."""
-    print("CodeLoom LLM Integration Examples")
+    print("Infiniloom LLM Integration Examples")
     print("=" * 60)
     print()
 
@@ -214,7 +214,7 @@ def main():
     has_google = os.environ.get("GOOGLE_API_KEY")
 
     if not any([has_anthropic, has_openai, has_google]):
-        print("⚠ No API keys found in environment variables.")
+        print(" No API keys found in environment variables.")
         print("Set one or more of:")
         print("  - ANTHROPIC_API_KEY")
         print("  - OPENAI_API_KEY")
@@ -237,7 +237,7 @@ def main():
     # Always show comparison
     multi_model_comparison()
 
-    print("\n✓ Integration examples completed!")
+    print("\n Integration examples completed!")
 
 
 if __name__ == "__main__":

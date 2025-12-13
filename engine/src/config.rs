@@ -278,9 +278,6 @@ pub struct PerformanceConfig {
 
     /// Skip symbol extraction for faster scanning
     pub skip_symbols: bool,
-
-    /// Use Zig core for maximum performance
-    pub use_zig_core: bool,
 }
 
 impl Default for PerformanceConfig {
@@ -291,7 +288,6 @@ impl Default for PerformanceConfig {
             cache_dir: ".infiniloom/cache".to_owned(),
             memory_mapped: true,
             skip_symbols: false,
-            use_zig_core: true,
         }
     }
 }

@@ -7,7 +7,6 @@ Thank you for your interest in contributing to Infiniloom! This document provide
 ### Prerequisites
 
 - **Rust**: 1.75 or later
-- **Zig**: 0.13 or later (for zig-core feature)
 - **Git**: For version control
 
 ### Setting Up the Development Environment
@@ -96,7 +95,6 @@ cargo fmt
 infiniloom/
 ├── cli/          # Command-line interface
 ├── engine/       # Core processing engine
-├── core/         # Zig performance core
 ├── bindings/
 │   ├── python/   # Python bindings (PyO3)
 │   ├── node/     # Node.js bindings (NAPI-RS)

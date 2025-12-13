@@ -1,6 +1,6 @@
-# @codeloom/node
+# @infiniloom/node
 
-Node.js bindings for CodeLoom - Repository context engine for LLMs.
+Node.js bindings for Infiniloom - Repository context engine for LLMs.
 
 ## Features
 
@@ -14,7 +14,7 @@ Node.js bindings for CodeLoom - Repository context engine for LLMs.
 ## Installation
 
 ```bash
-npm install @codeloom/node
+npm install @infiniloom/node
 ```
 
 ## Quick Start
@@ -22,7 +22,7 @@ npm install @codeloom/node
 ### Simple Packing
 
 ```javascript
-const { pack } = require('@codeloom/node');
+const { pack } = require('@infiniloom/node');
 
 // Pack a repository with default settings
 const context = pack('./my-repo');
@@ -32,10 +32,10 @@ console.log(context);
 ### With Options
 
 ```javascript
-const { pack } = require('@codeloom/node');
+const { pack } = require('@infiniloom/node');
 
 const context = pack('./my-repo', {
-  format: 'xml',           // Output format: 'xml', 'markdown', or 'json'
+  format: 'xml',           // Output format: 'xml', 'markdown', 'json', 'yaml', 'toon'
   model: 'claude',         // Target model: 'claude', 'gpt-4o', 'gpt-4', 'gemini', 'llama'
   compression: 'balanced', // Compression: 'none', 'minimal', 'balanced', 'aggressive', 'extreme'
   mapBudget: 2000,        // Token budget for repository map
@@ -47,7 +47,7 @@ const context = pack('./my-repo', {
 ### Repository Scanning
 
 ```javascript
-const { scan } = require('@codeloom/node');
+const { scan } = require('@infiniloom/node');
 
 const stats = scan('./my-repo', 'claude');
 console.log(`Repository: ${stats.name}`);
@@ -61,19 +61,19 @@ console.log(`Languages:`, stats.languages);
 ### Token Counting
 
 ```javascript
-const { countTokens } = require('@codeloom/node');
+const { countTokens } = require('@infiniloom/node');
 
 const count = countTokens('Hello, world!', 'claude');
 console.log(`Tokens: ${count}`);
 ```
 
-### Advanced Usage with CodeLoom Class
+### Advanced Usage with Infiniloom Class
 
 ```javascript
-const { CodeLoom } = require('@codeloom/node');
+const { Infiniloom } = require('@infiniloom/node');
 
-// Create a CodeLoom instance
-const loom = new CodeLoom('./my-repo', 'claude');
+// Create an Infiniloom instance
+const loom = new Infiniloom('./my-repo', 'claude');
 
 // Get statistics
 const stats = loom.getStats();
@@ -138,7 +138,7 @@ Count tokens in text for a specific model.
 
 ```typescript
 interface PackOptions {
-  format?: string;        // "xml", "markdown", or "json"
+  format?: string;        // "xml", "markdown", "json", "yaml", "toon"
   model?: string;         // "claude", "gpt-4o", "gpt-4", "gemini", or "llama"
   compression?: string;   // "none", "minimal", "balanced", "aggressive", "extreme", "semantic"
   mapBudget?: number;     // Token budget for repository map
@@ -172,11 +172,11 @@ interface LanguageStat {
 }
 ```
 
-### CodeLoom Class
+### Infiniloom Class
 
-#### `new CodeLoom(path: string, model?: string)`
+#### `new Infiniloom(path: string, model?: string)`
 
-Create a new CodeLoom instance.
+Create a new Infiniloom instance.
 
 #### `getStats(): ScanStats`
 
@@ -214,12 +214,14 @@ Check for security issues and return findings.
 ## Output Formats
 
 - **xml** - XML format optimized for Claude
-- **markdown** - Markdown format for general use
+- **markdown** - Markdown format for GPT models
 - **json** - JSON format for programmatic access
+- **yaml** - YAML format optimized for Gemini
+- **toon** - TOON format (~40% smaller than JSON)
 
 ## Security Scanning
 
-CodeLoom automatically scans for sensitive data including:
+Infiniloom automatically scans for sensitive data including:
 
 - API keys
 - Access tokens
@@ -255,6 +257,6 @@ MIT
 
 ## Links
 
-- [GitHub Repository](https://github.com/codeloom/codeloom)
-- [Documentation](https://codeloom.dev/docs)
-- [npm Package](https://www.npmjs.com/package/@codeloom/node)
+- [GitHub Repository](https://github.com/homotopylabs/infiniloom)
+- [Documentation](https://infiniloom.dev/docs)
+- [npm Package](https://www.npmjs.com/package/@infiniloom/node)

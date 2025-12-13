@@ -89,71 +89,71 @@ impl SecurityScanner {
             // AWS
             SecretPattern {
                 kind: SecretKind::AwsCredential,
-                regex: Regex::new(r"AKIA[0-9A-Z]{16}").unwrap(),
+                regex: Regex::new(r"AKIA[0-9A-Z]{16}").expect("invalid AWS key regex"),
                 severity: Severity::Critical,
             },
             SecretPattern {
                 kind: SecretKind::AwsCredential,
-                regex: Regex::new(r#"(?i)aws[_-]?secret[_-]?access[_-]?key['"]?\s*[:=]\s*['"]?([A-Za-z0-9/+=]{40})"#).unwrap(),
+                regex: Regex::new(r#"(?i)aws[_-]?secret[_-]?access[_-]?key['"]?\s*[:=]\s*['"]?([A-Za-z0-9/+=]{40})"#).expect("invalid AWS secret regex"),
                 severity: Severity::Critical,
             },
             // GitHub
             SecretPattern {
                 kind: SecretKind::GitHubToken,
-                regex: Regex::new(r"ghp_[A-Za-z0-9]{36}").unwrap(),
+                regex: Regex::new(r"ghp_[A-Za-z0-9]{36}").expect("invalid GitHub PAT regex"),
                 severity: Severity::Critical,
             },
             SecretPattern {
                 kind: SecretKind::GitHubToken,
-                regex: Regex::new(r"github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}").unwrap(),
+                regex: Regex::new(r"github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}").expect("invalid GitHub fine-grained PAT regex"),
                 severity: Severity::Critical,
             },
             // Private keys
             SecretPattern {
                 kind: SecretKind::PrivateKey,
-                regex: Regex::new(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----").unwrap(),
+                regex: Regex::new(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----").expect("invalid private key regex"),
                 severity: Severity::Critical,
             },
             // Generic API keys
             SecretPattern {
                 kind: SecretKind::ApiKey,
-                regex: Regex::new(r#"(?i)(?:api[_-]?key|apikey)['"]?\s*[:=]\s*['"]?([A-Za-z0-9_-]{20,})"#).unwrap(),
+                regex: Regex::new(r#"(?i)(?:api[_-]?key|apikey)['"]?\s*[:=]\s*['"]?([A-Za-z0-9_-]{20,})"#).expect("invalid API key regex"),
                 severity: Severity::High,
             },
             // Generic secrets
             SecretPattern {
                 kind: SecretKind::Generic,
-                regex: Regex::new(r#"(?i)(?:secret|token)['"]?\s*[:=]\s*['"]?([A-Za-z0-9_-]{20,})"#).unwrap(),
+                regex: Regex::new(r#"(?i)(?:secret|token)['"]?\s*[:=]\s*['"]?([A-Za-z0-9_-]{20,})"#).expect("invalid secret/token regex"),
                 severity: Severity::High,
             },
             // Passwords
             SecretPattern {
                 kind: SecretKind::Password,
-                regex: Regex::new(r#"(?i)password['"]?\s*[:=]\s*['"]?([^'"\s]{8,})"#).unwrap(),
+                regex: Regex::new(r#"(?i)password['"]?\s*[:=]\s*['"]?([^'"\s]{8,})"#).expect("invalid password regex"),
                 severity: Severity::High,
             },
             // Connection strings
             SecretPattern {
                 kind: SecretKind::ConnectionString,
-                regex: Regex::new(r#"(?i)(?:mongodb|postgres|mysql|redis)://[^\s'""]+"#).unwrap(),
+                regex: Regex::new(r#"(?i)(?:mongodb|postgres|mysql|redis)://[^\s'""]+"#).expect("invalid connection string regex"),
                 severity: Severity::High,
             },
             // JWT tokens
             SecretPattern {
                 kind: SecretKind::AccessToken,
-                regex: Regex::new(r"eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*").unwrap(),
+                regex: Regex::new(r"eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*").expect("invalid JWT regex"),
                 severity: Severity::High,
             },
             // Slack tokens
             SecretPattern {
                 kind: SecretKind::AccessToken,
-                regex: Regex::new(r"xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24}").unwrap(),
+                regex: Regex::new(r"xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24}").expect("invalid Slack token regex"),
                 severity: Severity::High,
             },
             // Stripe keys
             SecretPattern {
                 kind: SecretKind::ApiKey,
-                regex: Regex::new(r"(?:sk|pk)_(?:test|live)_[A-Za-z0-9]{24,}").unwrap(),
+                regex: Regex::new(r"(?:sk|pk)_(?:test|live)_[A-Za-z0-9]{24,}").expect("invalid Stripe key regex"),
                 severity: Severity::Critical,
             },
         ];

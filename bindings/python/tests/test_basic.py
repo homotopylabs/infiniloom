@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Basic tests for CodeLoom Python bindings.
+Basic tests for Infiniloom Python bindings.
 """
 
 import pytest
-import codeloom
-from codeloom import CodeLoom, CodeLoomError
+import infiniloom
+from infiniloom import Infiniloom, InfiniloomError
 import tempfile
 import os
 from pathlib import Path
@@ -13,8 +13,8 @@ from pathlib import Path
 
 def test_version():
     """Test that version is available."""
-    assert hasattr(codeloom, "__version__")
-    assert codeloom.__version__
+    assert hasattr(infiniloom, "__version__")
+    assert infiniloom.__version__
 
 
 def test_count_tokens():
@@ -22,9 +22,9 @@ def test_count_tokens():
     text = "Hello, world!"
 
     # Test different models
-    claude_tokens = codeloom.count_tokens(text, model="claude")
-    gpt_tokens = codeloom.count_tokens(text, model="gpt")
-    gemini_tokens = codeloom.count_tokens(text, model="gemini")
+    claude_tokens = infiniloom.count_tokens(text, model="claude")
+    gpt_tokens = infiniloom.count_tokens(text, model="gpt")
+    gemini_tokens = infiniloom.count_tokens(text, model="gemini")
 
     assert claude_tokens > 0
     assert gpt_tokens > 0
@@ -37,13 +37,13 @@ def test_count_tokens():
 def test_count_tokens_invalid_model():
     """Test that invalid model raises error."""
     with pytest.raises(ValueError):
-        codeloom.count_tokens("test", model="invalid_model")
+        infiniloom.count_tokens("test", model="invalid_model")
 
 
 def test_scan_nonexistent_path():
     """Test that scanning nonexistent path raises error."""
-    with pytest.raises(CodeLoomError):
-        codeloom.scan("/nonexistent/path/xyz123")
+    with pytest.raises(InfiniloomError):
+        infiniloom.scan("/nonexistent/path/xyz123")
 
 
 def test_scan_with_temp_repo():
@@ -54,7 +54,7 @@ def test_scan_with_temp_repo():
         test_file.write_text("def hello():\n    print('world')\n")
 
         # Scan the directory
-        stats = codeloom.scan(tmpdir, respect_gitignore=False)
+        stats = infiniloom.scan(tmpdir, respect_gitignore=False)
 
         assert stats["name"] == os.path.basename(tmpdir)
         assert stats["total_files"] == 1
@@ -75,14 +75,14 @@ def test_pack_with_temp_repo():
         (Path(tmpdir) / "utils.py").write_text("def util():\n    pass\n")
 
         # Pack in different formats
-        xml_output = codeloom.pack(tmpdir, format="xml", model="claude")
+        xml_output = infiniloom.pack(tmpdir, format="xml", model="claude")
         assert len(xml_output) > 0
         assert "repository" in xml_output.lower() or "repo" in xml_output.lower()
 
-        md_output = codeloom.pack(tmpdir, format="markdown", model="gpt")
+        md_output = infiniloom.pack(tmpdir, format="markdown", model="gpt")
         assert len(md_output) > 0
 
-        json_output = codeloom.pack(tmpdir, format="json", model="claude")
+        json_output = infiniloom.pack(tmpdir, format="json", model="claude")
         assert len(json_output) > 0
 
 
@@ -90,24 +90,24 @@ def test_pack_invalid_format():
     """Test that invalid format raises error."""
     with tempfile.TemporaryDirectory() as tmpdir:
         with pytest.raises(ValueError):
-            codeloom.pack(tmpdir, format="invalid_format")
+            infiniloom.pack(tmpdir, format="invalid_format")
 
 
 def test_pack_invalid_compression():
     """Test that invalid compression raises error."""
     with tempfile.TemporaryDirectory() as tmpdir:
         with pytest.raises(ValueError):
-            codeloom.pack(tmpdir, compression="invalid_compression")
+            infiniloom.pack(tmpdir, compression="invalid_compression")
 
 
-def test_codeloom_class():
-    """Test CodeLoom class."""
+def test_infiniloom_class():
+    """Test Infiniloom class."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create test file
         (Path(tmpdir) / "test.py").write_text("def test():\n    pass\n")
 
-        # Create CodeLoom instance
-        loom = CodeLoom(tmpdir)
+        # Create Infiniloom instance
+        loom = Infiniloom(tmpdir)
         assert str(tmpdir) in str(loom)
 
         # Test stats
@@ -132,10 +132,10 @@ def test_codeloom_class():
         assert "token_count" in repo_map
 
 
-def test_codeloom_class_nonexistent():
-    """Test that CodeLoom raises error for nonexistent path."""
+def test_infiniloom_class_nonexistent():
+    """Test that Infiniloom raises error for nonexistent path."""
     with pytest.raises(IOError):
-        CodeLoom("/nonexistent/path/xyz123")
+        Infiniloom("/nonexistent/path/xyz123")
 
 
 def test_security_scan():
@@ -146,7 +146,7 @@ def test_security_scan():
         test_file.write_text("password = 'secret123'\napi_key = 'sk-1234567890'\n")
 
         # Scan for security issues
-        findings = codeloom.scan_security(tmpdir)
+        findings = infiniloom.scan_security(tmpdir)
 
         # We expect to find some issues (hardcoded credentials)
         assert isinstance(findings, list)
@@ -161,7 +161,7 @@ def test_multiple_languages():
         (Path(tmpdir) / "utils.js").write_text("function utils() {}")
         (Path(tmpdir) / "lib.rs").write_text("fn main() {}")
 
-        stats = codeloom.scan(tmpdir, respect_gitignore=False)
+        stats = infiniloom.scan(tmpdir, respect_gitignore=False)
 
         assert stats["total_files"] == 3
 
@@ -184,14 +184,14 @@ def test_gitignore_respect():
         (tmpdir_path / "ignored.py").write_text("def ignored(): pass")
 
         # Scan with gitignore respect
-        stats = codeloom.scan(tmpdir, respect_gitignore=True)
+        stats = infiniloom.scan(tmpdir, respect_gitignore=True)
 
         # Should only find main.py and .gitignore
         # (gitignore itself is typically included)
         assert stats["total_files"] <= 2
 
         # Scan without gitignore respect
-        stats_no_ignore = codeloom.scan(tmpdir, respect_gitignore=False)
+        stats_no_ignore = infiniloom.scan(tmpdir, respect_gitignore=False)
         assert stats_no_ignore["total_files"] >= 2
 
 

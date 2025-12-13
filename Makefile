@@ -1,4 +1,4 @@
-# CodeLoom Makefile
+# Infiniloom Makefile
 # Unified build, lint, test, and coverage commands
 
 .PHONY: all build build-release clean test lint fmt check coverage doc ci install-tools help
@@ -16,14 +16,8 @@ build:
 build-release:
 	cargo build --workspace --release
 
-build-zig:
-	cd core && zig build -Doptimize=ReleaseFast
-
-build-all: build-zig build
-
 clean:
 	cargo clean
-	cd core && zig build --clean 2>/dev/null || rm -rf core/zig-out core/zig-cache
 
 # ============================================================================
 # Testing
@@ -35,11 +29,6 @@ test:
 test-release:
 	cargo test --workspace --all-features --release
 
-test-zig:
-	cd core && zig build test
-
-test-all: test-zig test
-
 # ============================================================================
 # Linting & Formatting
 # ============================================================================
@@ -47,12 +36,10 @@ test-all: test-zig test
 # Format code
 fmt:
 	cargo fmt --all
-	cd core && zig fmt src/
 
 # Check formatting without changing files
 fmt-check:
 	cargo fmt --all -- --check
-	cd core && zig fmt --check src/
 
 # Run clippy with strictest settings
 lint:
@@ -62,12 +49,6 @@ lint:
 		-D clippy::pedantic \
 		-D clippy::nursery \
 		-W clippy::cargo
-
-# Lint Zig code
-lint-zig:
-	cd core && zig build -Doptimize=Debug 2>&1 | grep -E "(error|warning)" || true
-
-lint-all: lint lint-zig
 
 # Full check (compile without codegen)
 check:
@@ -180,27 +161,22 @@ release-check:
 # ============================================================================
 
 help:
-	@echo "CodeLoom Development Commands"
-	@echo "============================="
+	@echo "Infiniloom Development Commands"
+	@echo "==============================="
 	@echo ""
 	@echo "Build:"
 	@echo "  make build          - Build debug version"
 	@echo "  make build-release  - Build release version"
-	@echo "  make build-zig      - Build Zig core library"
-	@echo "  make build-all      - Build everything"
 	@echo "  make clean          - Clean all build artifacts"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test           - Run all tests"
 	@echo "  make test-release   - Run tests in release mode"
-	@echo "  make test-zig       - Run Zig tests"
-	@echo "  make test-all       - Run all tests (Rust + Zig)"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make fmt            - Format all code"
 	@echo "  make fmt-check      - Check formatting"
 	@echo "  make lint           - Run clippy lints"
-	@echo "  make lint-all       - Run all linters"
 	@echo "  make check          - Quick compile check"
 	@echo ""
 	@echo "Coverage:"

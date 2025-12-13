@@ -1,7 +1,7 @@
 .PHONY: help install dev build test clean lint format
 
 help:
-	@echo "CodeLoom Python Bindings"
+	@echo "Infiniloom Python Bindings"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install    - Install the package"
@@ -32,7 +32,7 @@ clean:
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info
-	rm -rf python/codeloom/__pycache__
+	rm -rf python/infiniloom/__pycache__
 	rm -rf tests/__pycache__
 	rm -rf .pytest_cache
 	find . -type f -name "*.pyc" -delete

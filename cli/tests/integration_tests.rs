@@ -8,6 +8,11 @@ use std::fs;
 use std::process::Command;
 use tempfile::TempDir;
 
+/// Helper to get the infiniloom binary command
+fn infiniloom_cmd() -> Command {
+    Command::new(assert_cmd::cargo::cargo_bin!("infiniloom"))
+}
+
 /// Helper to create a test repository structure
 fn create_test_repo() -> TempDir {
     let temp_dir = TempDir::new().unwrap();
@@ -191,7 +196,7 @@ edition = "2021"
 
 #[test]
 fn test_help_command() {
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("--help");
     cmd.assert()
         .success()
@@ -200,7 +205,7 @@ fn test_help_command() {
 
 #[test]
 fn test_version_command() {
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("--version");
     cmd.assert()
         .success()
@@ -211,7 +216,7 @@ fn test_version_command() {
 fn test_scan_command_basic() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path());
     cmd.assert()
         .success()
@@ -224,7 +229,7 @@ fn test_scan_command_basic() {
 fn test_scan_command_verbose() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path()).arg("--verbose");
     cmd.assert()
         .success()
@@ -238,7 +243,7 @@ fn test_scan_command_verbose() {
 fn test_pack_command_xml() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     cmd.assert()
@@ -252,7 +257,7 @@ fn test_pack_command_xml() {
 fn test_pack_command_markdown() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack")
         .arg(temp.path())
         .arg("--format")
@@ -268,7 +273,7 @@ fn test_pack_command_markdown() {
 fn test_pack_command_json() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack").arg(temp.path()).arg("--format").arg("json");
 
     let output = cmd.assert().success();
@@ -284,7 +289,7 @@ fn test_pack_with_model_option() {
     let temp = create_test_repo();
 
     for model in &["claude", "gpt4o", "gpt4", "gemini", "llama"] {
-        let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+        let mut cmd = infiniloom_cmd();
         cmd.arg("pack")
             .arg(temp.path())
             .arg("--model")
@@ -301,7 +306,7 @@ fn test_pack_with_compression() {
     let temp = create_test_repo();
 
     for compression in &["none", "minimal", "balanced", "aggressive", "extreme"] {
-        let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+        let mut cmd = infiniloom_cmd();
         cmd.arg("pack")
             .arg(temp.path())
             .arg("--compression")
@@ -317,7 +322,7 @@ fn test_pack_with_compression() {
 fn test_map_command() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("map").arg(temp.path());
 
     cmd.assert()
@@ -329,7 +334,7 @@ fn test_map_command() {
 fn test_map_with_budget() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("map").arg(temp.path()).arg("--budget").arg("1000");
 
     cmd.assert().success();
@@ -337,7 +342,7 @@ fn test_map_with_budget() {
 
 #[test]
 fn test_info_command() {
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("info");
 
     cmd.assert()
@@ -348,7 +353,7 @@ fn test_info_command() {
 
 #[test]
 fn test_nonexistent_path() {
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg("/nonexistent/path/12345");
     cmd.assert().failure();
 }
@@ -358,7 +363,7 @@ fn test_gitignore_respected() {
     let temp = create_test_repo();
 
     // Initialize git repo so .gitignore is respected
-    let _ = std::process::Command::new("git")
+    let _ = Command::new("git")
         .args(["init"])
         .current_dir(temp.path())
         .output();
@@ -371,7 +376,7 @@ fn test_gitignore_respected() {
     fs::create_dir_all(temp.path().join("node_modules")).unwrap();
     fs::write(temp.path().join("node_modules/package.json"), "{}").unwrap();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     let output = cmd.assert().success();
@@ -387,7 +392,7 @@ fn test_output_to_file() {
     let temp = create_test_repo();
     let output_file = temp.path().join("output.xml");
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack")
         .arg(temp.path())
         .arg("--output")
@@ -413,7 +418,7 @@ fn test_output_to_file() {
 fn test_multi_language_detection() {
     let temp = create_test_repo();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path());
 
     let output = cmd.assert().success();
@@ -427,7 +432,7 @@ fn test_multi_language_detection() {
 fn test_empty_directory() {
     let temp = TempDir::new().unwrap();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path());
 
     // Should handle empty directory gracefully
@@ -442,7 +447,7 @@ fn test_large_file_handling() {
     let large_content = "fn large_function() { /* code */ }\n".repeat(30000);
     fs::write(temp.path().join("large.rs"), large_content).unwrap();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path());
 
     cmd.assert().success();
@@ -457,7 +462,7 @@ fn test_binary_file_skipped() {
     // Create a valid source file
     fs::write(temp.path().join("source.rs"), "fn main() {}").unwrap();
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("pack").arg(temp.path()).arg("--format").arg("xml");
 
     let output = cmd.assert().success();
@@ -479,7 +484,7 @@ fn test_symlink_handling() {
         let _ = symlink(temp.path().join("src/main.rs"), temp.path().join("main_link.rs"));
     }
 
-    let mut cmd = Command::cargo_bin("infiniloom").unwrap();
+    let mut cmd = infiniloom_cmd();
     cmd.arg("scan").arg(temp.path());
 
     cmd.assert().success();

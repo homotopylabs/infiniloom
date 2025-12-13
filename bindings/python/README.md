@@ -1,18 +1,18 @@
-# CodeLoom Python Bindings
+# Infiniloom Python Bindings
 
-Python bindings for [CodeLoom](https://github.com/codeloom/codeloom) - a repository context engine for Large Language Models.
+Python bindings for [Infiniloom](https://github.com/homotopylabs/infiniloom) - a repository context engine for Large Language Models.
 
 ## Installation
 
 ```bash
-pip install codeloom
+pip install infiniloom
 ```
 
 Or from source:
 
 ```bash
-git clone https://github.com/codeloom/codeloom.git
-cd codeloom/bindings/python
+git clone https://github.com/homotopylabs/infiniloom.git
+cd infiniloom/bindings/python
 pip install maturin
 maturin develop  # For development
 maturin build --release  # For production build
@@ -23,29 +23,29 @@ maturin build --release  # For production build
 ### Functional API
 
 ```python
-import codeloom
+import infiniloom
 
 # Pack a repository into Claude-optimized XML
-context = codeloom.pack("/path/to/repo", format="xml", model="claude")
+context = infiniloom.pack("/path/to/repo", format="xml", model="claude")
 print(context)
 
 # Scan repository and get statistics
-stats = codeloom.scan("/path/to/repo")
+stats = infiniloom.scan("/path/to/repo")
 print(f"Files: {stats['total_files']}")
 print(f"Languages: {stats['languages']}")
 
 # Count tokens for a specific model
-tokens = codeloom.count_tokens("Hello, world!", model="claude")
+tokens = infiniloom.count_tokens("Hello, world!", model="claude")
 print(f"Tokens: {tokens}")
 ```
 
 ### Object-Oriented API
 
 ```python
-from codeloom import CodeLoom
+from infiniloom import Infiniloom
 
-# Create a CodeLoom instance
-loom = CodeLoom("/path/to/repo")
+# Create an Infiniloom instance
+loom = Infiniloom("/path/to/repo")
 
 # Get repository statistics
 stats = loom.stats()
@@ -80,7 +80,7 @@ Pack a repository into an LLM-optimized format.
 
 **Parameters:**
 - `path` (str): Path to the repository
-- `format` (str): Output format - "xml", "markdown", "json", or "yaml"
+- `format` (str): Output format - "xml", "markdown", "json", "yaml", or "toon"
 - `model` (str): Target model - "claude", "gpt", "gpt-4o", "gemini", or "llama"
 - `compression` (str): Compression level - "none", "minimal", "balanced", "aggressive", "extreme", or "semantic"
 - `map_budget` (int): Token budget for repository map (default: 2000)
@@ -134,7 +134,7 @@ Scan repository for security issues.
 
 ### Classes
 
-#### `CodeLoom(path)`
+#### `Infiniloom(path)`
 
 Object-oriented interface for repository analysis.
 
@@ -174,7 +174,7 @@ Get list of all files. Returns list of dicts with file metadata.
 Best for Claude models. Uses XML structure that Claude understands well.
 
 ```python
-context = codeloom.pack("/path/to/repo", format="xml", model="claude")
+context = infiniloom.pack("/path/to/repo", format="xml", model="claude")
 ```
 
 ### Markdown (GPT-optimized)
@@ -182,7 +182,7 @@ context = codeloom.pack("/path/to/repo", format="xml", model="claude")
 Best for GPT models. Uses Markdown with clear hierarchical structure.
 
 ```python
-context = codeloom.pack("/path/to/repo", format="markdown", model="gpt")
+context = infiniloom.pack("/path/to/repo", format="markdown", model="gpt")
 ```
 
 ### JSON
@@ -190,7 +190,7 @@ context = codeloom.pack("/path/to/repo", format="markdown", model="gpt")
 Generic JSON format for programmatic processing.
 
 ```python
-context = codeloom.pack("/path/to/repo", format="json")
+context = infiniloom.pack("/path/to/repo", format="json")
 ```
 
 ### YAML (Gemini-optimized)
@@ -198,14 +198,22 @@ context = codeloom.pack("/path/to/repo", format="json")
 Best for Gemini. Query should be placed at the end.
 
 ```python
-context = codeloom.pack("/path/to/repo", format="yaml", model="gemini")
+context = infiniloom.pack("/path/to/repo", format="yaml", model="gemini")
+```
+
+### TOON
+
+Most token-efficient format (~40% smaller than JSON).
+
+```python
+context = infiniloom.pack("/path/to/repo", format="toon")
 ```
 
 ## Compression Levels
 
 - **none**: No compression (0% reduction)
 - **minimal**: Remove empty lines, trim whitespace (15% reduction)
-- **balanced**: Remove comments, normalize whitespace (35% reduction) ⭐ Default
+- **balanced**: Remove comments, normalize whitespace (35% reduction) - Default
 - **aggressive**: Remove docstrings, keep signatures only (60% reduction)
 - **extreme**: Key symbols only (80% reduction)
 - **semantic**: AI-powered semantic compression (90% reduction)
@@ -215,11 +223,11 @@ context = codeloom.pack("/path/to/repo", format="yaml", model="gemini")
 ### With Anthropic Claude
 
 ```python
-import codeloom
+import infiniloom
 import anthropic
 
 # Generate context
-context = codeloom.pack(
+context = infiniloom.pack(
     "/path/to/repo",
     format="xml",
     model="claude",
@@ -229,7 +237,7 @@ context = codeloom.pack(
 # Send to Claude
 client = anthropic.Anthropic()
 response = client.messages.create(
-    model="claude-3-5-sonnet-20241022",
+    model="claude-sonnet-4-20250514",
     max_tokens=4096,
     messages=[{
         "role": "user",
@@ -242,10 +250,10 @@ print(response.content[0].text)
 ### With OpenAI GPT
 
 ```python
-import codeloom
+import infiniloom
 import openai
 
-context = codeloom.pack("/path/to/repo", format="markdown", model="gpt")
+context = infiniloom.pack("/path/to/repo", format="markdown", model="gpt")
 
 client = openai.OpenAI()
 response = client.chat.completions.create(
@@ -261,10 +269,10 @@ print(response.choices[0].message.content)
 ### With Google Gemini
 
 ```python
-import codeloom
+import infiniloom
 import google.generativeai as genai
 
-context = codeloom.pack("/path/to/repo", format="yaml", model="gemini")
+context = infiniloom.pack("/path/to/repo", format="yaml", model="gemini")
 
 genai.configure(api_key="YOUR_API_KEY")
 model = genai.GenerativeModel("gemini-1.5-pro")
@@ -277,9 +285,9 @@ print(response.text)
 ### Custom Token Budget
 
 ```python
-from codeloom import CodeLoom
+from infiniloom import Infiniloom
 
-loom = CodeLoom("/large/repo")
+loom = Infiniloom("/large/repo")
 
 # Generate smaller context for models with limited context windows
 compact_map = loom.map(map_budget=1000, max_symbols=25)
@@ -291,9 +299,9 @@ detailed_map = loom.map(map_budget=5000, max_symbols=200)
 ### Security Scanning
 
 ```python
-from codeloom import CodeLoom
+from infiniloom import Infiniloom
 
-loom = CodeLoom("/path/to/repo")
+loom = Infiniloom("/path/to/repo")
 findings = loom.scan_security()
 
 # Filter by severity
@@ -310,9 +318,9 @@ for finding in critical:
 ### File Filtering
 
 ```python
-from codeloom import CodeLoom
+from infiniloom import Infiniloom
 
-loom = CodeLoom("/path/to/repo")
+loom = Infiniloom("/path/to/repo")
 files = loom.files()
 
 # Get Python files only
@@ -327,7 +335,7 @@ large_files = [f for f in files if f['tokens'] > 1000]
 
 ## Performance
 
-CodeLoom is built in Rust for maximum performance:
+Infiniloom is built in Rust for maximum performance:
 
 - **Fast scanning**: Parallel file processing with ignore patterns
 - **Memory efficient**: Streaming processing, optional content loading
@@ -344,6 +352,6 @@ MIT License - see [LICENSE](../../LICENSE) for details.
 
 ## Links
 
-- [GitHub](https://github.com/codeloom/codeloom)
-- [Documentation](https://codeloom.dev/docs)
-- [PyPI](https://pypi.org/project/codeloom)
+- [GitHub](https://github.com/homotopylabs/infiniloom)
+- [Documentation](https://infiniloom.dev/docs)
+- [PyPI](https://pypi.org/project/infiniloom)

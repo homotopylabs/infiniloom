@@ -1,11 +1,11 @@
-# CodeLoom WASM
+# Infiniloom WASM
 
-WebAssembly bindings for [CodeLoom](https://github.com/codeloom/codeloom) - Transform repositories into LLM-friendly context.
+WebAssembly bindings for [Infiniloom](https://github.com/homotopylabs/infiniloom) - Transform repositories into LLM-friendly context.
 
 ## Installation
 
 ```bash
-npm install @codeloom/wasm
+npm install @infiniloom/wasm
 ```
 
 ## Usage
@@ -17,11 +17,11 @@ npm install @codeloom/wasm
 <html>
 <head>
     <meta charset="utf-8">
-    <title>CodeLoom Demo</title>
+    <title>Infiniloom Demo</title>
 </head>
 <body>
     <script type="module">
-        import init, { count_tokens_all, generate_context, OutputFormat, CompressionLevel } from './pkg-web/codeloom_wasm.js';
+        import init, { count_tokens_all, generate_context, OutputFormat, CompressionLevel } from './pkg-web/infiniloom_wasm.js';
 
         async function main() {
             // Initialize WASM module
@@ -61,7 +61,7 @@ npm install @codeloom/wasm
 ### Node.js
 
 ```javascript
-const { count_tokens_all, generate_context, OutputFormat, CompressionLevel } = require('@codeloom/wasm/pkg-node');
+const { count_tokens_all, generate_context, OutputFormat, CompressionLevel } = require('@infiniloom/wasm/pkg-node');
 
 // Count tokens
 const text = "function hello() { console.log('Hello!'); }";
@@ -86,7 +86,7 @@ console.log(context);
 ### Webpack/Bundlers
 
 ```javascript
-import init, { count_tokens_all, generate_context, OutputFormat, CompressionLevel } from '@codeloom/wasm';
+import init, { count_tokens_all, generate_context, OutputFormat, CompressionLevel } from '@infiniloom/wasm';
 
 async function run() {
     await init();
@@ -211,7 +211,7 @@ console.log({
 
 ## Performance
 
-CodeLoom WASM is designed for performance:
+Infiniloom WASM is designed for performance:
 
 - **Fast token counting**: Optimized algorithms for quick estimation
 - **Efficient compression**: Rule-based compression with minimal overhead
@@ -268,6 +268,6 @@ Contributions welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelin
 
 ## Links
 
-- [Main Repository](https://github.com/codeloom/codeloom)
-- [Documentation](https://codeloom.dev/docs)
-- [Issues](https://github.com/codeloom/codeloom/issues)
+- [Main Repository](https://github.com/homotopylabs/infiniloom)
+- [Documentation](https://infiniloom.dev/docs)
+- [Issues](https://github.com/homotopylabs/infiniloom/issues)
